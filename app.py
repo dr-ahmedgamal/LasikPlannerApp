@@ -12,7 +12,7 @@ from logic import (
 st.set_page_config(page_title="Refractive Surgery Planner", layout="centered")
 
 st.markdown(
-    "<h2 style='color:#1f77b4;'>👁️ Refractive Surgery AI Planner</h2>",
+    "<h2 style='color:#1f77b4;'>👁️ Refractive Surgerical Planner</h2>",
     unsafe_allow_html=True,
 )
 
@@ -65,7 +65,7 @@ st.markdown("<br><br>", unsafe_allow_html=True)
 # --- Large Centered Button Container ---
 button_col = st.columns([1, 2, 1])[1]
 with button_col:
-    clicked = st.button("🧠 Refractive Plan", key="plan_button")
+    clicked = st.button("Refractive Plan", key="plan_button")
 
 # --- Inject CSS for Styling the Button ---
 st.markdown("""

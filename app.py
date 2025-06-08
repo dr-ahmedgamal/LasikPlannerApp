@@ -1,10 +1,7 @@
-# app.py
-
 import streamlit as st
 import pandas as pd
 from logic import (
-    calculate_ablation_depth,
-    calculate_postop_keratometry,
+    calculate_postop_k,
     calculate_postop_pachymetry,
     calculate_postop_bcva,
     determine_surgery,
@@ -13,63 +10,93 @@ from logic import (
 
 st.title("LASIK Surgical Planner")
 
-st.markdown("### Manual Input Fields")
-
-# Input fields with required defaults and steps
-age = st.number_input("Age", min_value=18, max_value=100, value=18, step=1)
-k1_pre = st.number_input("Pre-op K1 (D)", value=43.00, step=0.01, format="%.2f")
-k2_pre = st.number_input("Pre-op K2 (D)", value=44.00, step=0.01, format="%.2f")
+# Input fields in the requested order
+age = st.number_input("Age", min_value=0, value=18, step=1)
 sphere = st.number_input("Sphere (D)", value=0.00, step=0.25, format="%.2f")
 cylinder = st.number_input("Cylinder (D)", value=0.00, step=0.25, format="%.2f")
-bcva_pre = st.number_input("Pre-op BCVA (LogMAR)", value=0.0, step=0.01, format="%.2f")
-pachy_pre = st.number_input("Pre-op Pachymetry (µm)", value=540.0, step=1.0)
+bcva_pre = st.number_input("BCVA (LogMAR)", value=1.0, step=0.01, format="%.2f")
+k1_pre = st.number_input("K1 (D)", value=43.00, step=0.01, format="%.2f")
+k2_pre = st.number_input("K2 (D)", value=44.00, step=0.01, format="%.2f")
+pachy_pre = st.number_input("Pre-op Pachymetry (µm)", value=540, step=1)
+optical_zone = st.number_input("Optical Zone (mm)", value=6.5, step=0.1, format="%.2f")
 
-optical_zone = st.number_input("Optical Zone (mm)", min_value=5.0, max_value=9.0, value=6.5, step=0.1)
+# Custom CSS to enlarge the font size of the upload label slightly
+st.markdown(
+    """
+    <style>
+    .upload-label {
+        font-size: 0.9rem;
+        font-weight: 600;
+        margin-top: 1em;
+        margin-bottom: 0.3em;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
 
-st.markdown('<small>Optional: Upload CSV to Auto-Fill (overrides manual fields)</small>', unsafe_allow_html=True)
-uploaded_file = st.file_uploader("Upload patient data CSV", type=["csv"])
+st.markdown('<div class="upload-label">Optional: Upload CSV to Auto-Fill (overrides manual fields)</div>', unsafe_allow_html=True)
 
-# Initialize results placeholders
-result_data = {}
+uploaded_file = st.file_uploader("", type=["csv"])
 
 if uploaded_file:
     data = pd.read_csv(uploaded_file)
-    st.markdown("### Uploaded Data Preview")
+    st.write("### Input Data from CSV")
     st.dataframe(data)
 
-    # Take first row to fill fields and calculate
-    row = data.iloc[0]
+    results = []
+    for idx, row in data.iterrows():
+        sphere = row['Sphere']
+        cylinder = row['Cylinder']
+        K1_pre = row['K1_pre']
+        K2_pre = row['K2_pre']
+        pachy_pre = row['Pachymetry_pre']
+        bcva_pre = row['BCVA_pre']
+        age = row['Age']
+        optical_zone = row.get('OpticalZone', optical_zone)  # fallback to manual input if not in CSV
 
-    age = int(row.get("Age", age))
-    k1_pre = float(row.get("K1_pre", k1_pre))
-    k2_pre = float(row.get("K2_pre", k2_pre))
-    sphere = float(row.get("Sphere", sphere))
-    cylinder = float(row.get("Cylinder", cylinder))
-    bcva_pre = float(row.get("BCVA_pre", bcva_pre))
-    pachy_pre = float(row.get("Pachymetry_pre", pachy_pre))
-    optical_zone = float(row.get("OpticalZone", optical_zone))
+        K1_post, K2_post = calculate_postop_k(K1_pre, K2_pre, sphere, cylinder)
+        k_avg_post = (K1_post + K2_post) / 2
+        ablation_depth = 1.1 * (3 * optical_zone ** 2) * (abs(sphere) + abs(cylinder))
+        pachy_post = calculate_postop_pachymetry(pachy_pre, ablation_depth, sphere)
+        bcva_post = calculate_postop_bcva(bcva_pre, sphere + cylinder)
+        surgery = determine_surgery(sphere, cylinder, pachy_pre, pachy_post, k_avg_post, age)
+        warnings = check_warnings((K1_pre + K2_pre) / 2, pachy_pre, pachy_post, sphere, bcva_post, cylinder)
 
-if st.button("Calculate"):
-    ablation_depth = calculate_ablation_depth(sphere, cylinder, optical_zone)
-    k1_post, k2_post, kavg_post = calculate_postop_keratometry(sphere, cylinder, k1_pre, k2_pre)
-    pachy_post = calculate_postop_pachymetry(sphere, pachy_pre, ablation_depth)
-    bcva_post = calculate_postop_bcva(bcva_pre, sphere)
-    surgery = determine_surgery(sphere, cylinder, pachy_pre, pachy_post, kavg_post, age)
-    warnings = check_warnings(kavg_post, pachy_pre, pachy_post, cylinder, bcva_post)
+        results.append({
+            'PatientID': row.get('PatientID', idx + 1),
+            'Post-op K1': round(K1_post, 2),
+            'Post-op K2': round(K2_post, 2),
+            'Post-op Kavg': round(k_avg_post, 2),
+            'Ablation Depth (µm)': round(ablation_depth, 2),
+            'Post-op Pachymetry': round(pachy_post, 2),
+            'Post-op BCVA': round(bcva_post, 2),
+            'Recommended Surgery': surgery,
+            'Warnings': ', '.join(warnings) if warnings else 'None'
+        })
 
-    # Show calculated results
-    st.subheader("Results:")
-    st.write(f"Post-op K1: {k1_post:.2f} D")
-    st.write(f"Post-op K2: {k2_post:.2f} D")
-    st.write(f"Post-op Average K: {kavg_post:.2f} D")
-    st.write(f"Post-op Pachymetry: {pachy_post:.2f} µm")
-    st.write(f"Predicted Post-op BCVA (LogMAR): {bcva_post:.2f}")
-    st.write(f"Estimated Ablation Depth: {ablation_depth:.2f} µm")
+    st.write("### Results")
+    st.dataframe(pd.DataFrame(results))
 
-    st.subheader("Surgical Recommendation:")
-    st.write(surgery)
+else:
+    st.write("### Manual Input Results")
+    K1_post, K2_post = calculate_postop_k(k1_pre, k2_pre, sphere, cylinder)
+    k_avg_post = (K1_post + K2_post) / 2
+    ablation_depth = 1.1 * (3 * optical_zone ** 2) * (abs(sphere) + abs(cylinder))
+    pachy_post = calculate_postop_pachymetry(pachy_pre, ablation_depth, sphere)
+    bcva_post = calculate_postop_bcva(bcva_pre, sphere + cylinder)
+    surgery = determine_surgery(sphere, cylinder, pachy_pre, pachy_post, k_avg_post, age)
+    warnings = check_warnings((k1_pre + k2_pre) / 2, pachy_pre, pachy_post, sphere, bcva_post, cylinder)
 
-    if warnings:
-        st.subheader("Warnings:")
-        for w in warnings:
-            st.warning(w)
+    results = {
+        'Post-op K1': round(K1_post, 2),
+        'Post-op K2': round(K2_post, 2),
+        'Post-op Kavg': round(k_avg_post, 2),
+        'Ablation Depth (µm)': round(ablation_depth, 2),
+        'Post-op Pachymetry': round(pachy_post, 2),
+        'Post-op BCVA': round(bcva_post, 2),
+        'Recommended Surgery': surgery,
+        'Warnings': ', '.join(warnings) if warnings else 'None'
+    }
+
+    st.dataframe(pd.DataFrame([results]))

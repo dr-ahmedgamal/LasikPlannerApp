@@ -67,14 +67,14 @@ button_container = st.columns([1, 2, 1])[1]
 with button_container:
     clicked = st.button("🧠 Refractive Plan", use_container_width=True)
 
-# --- Enlarge Button Style ---
+# --- Enlarge and Bold Button Style ---
 st.markdown(
     """
     <style>
     div[data-testid="stButton"] button {
-        font-size: 24px !important;
-        height: 64px !important;
-        font-weight: bold;
+        font-size: 28px !important;
+        height: 70px !important;
+        font-weight: 900 !important;
         background-color: #007BFF;
         color: white;
         border-radius: 8px;

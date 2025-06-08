@@ -45,9 +45,9 @@ with col8:
 # Spacer
 st.markdown("")
 
-# Upload section
-st.markdown("##### Upload Patient Data (optional)")
-uploaded_file = st.file_uploader("Choose a CSV or TXT file", type=["csv", "txt"])
+# Upload section (simplified)
+st.markdown("<p style='margin-bottom: 2px;'>Upload Patient Data (optional)</p>", unsafe_allow_html=True)
+uploaded_file = st.file_uploader("", type=["csv", "txt"])
 
 # Load uploaded file if provided
 if uploaded_file is not None:

@@ -58,8 +58,10 @@ def main():
         optical_zone = st.number_input("Optical Zone (mm)", min_value=5.0, max_value=8.0, value=6.5, step=0.1)
 
     st.markdown("---")
-    st.markdown("📝 *Optional: Upload CSV to Auto-Fill (overrides manual fields)*", unsafe_allow_html=True)
-
+    st.markdown(
+        "<p style='font-size: 0.9rem;'>📝 Optional: Upload CSV to Auto-Fill (overrides manual fields)</p>",
+        unsafe_allow_html=True
+    )
     uploaded_file = st.file_uploader("Upload CSV file (columns: age, sphere, cylinder, bcva, k1, k2, pachy, optical_zone)", type=["csv"])
 
     if uploaded_file:
@@ -84,6 +86,20 @@ def main():
         st.dataframe(result_df)
 
     st.markdown("---")
+
+    # Enlarge the button
+    st.markdown(
+        """
+        <style>
+        div.stButton > button {
+            font-size: 18px;
+            padding: 0.5em 1.5em;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+
     if st.button("🔍 Analyze and Recommend Surgery"):
         result = process_case(age, sphere, cylinder, bcva, k1, k2, pachy, optical_zone)
 

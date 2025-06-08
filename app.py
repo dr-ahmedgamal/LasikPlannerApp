@@ -57,27 +57,6 @@ def main():
     with col8:
         optical_zone = st.number_input("Optical Zone (mm)", min_value=5.0, max_value=8.0, value=6.5, step=0.1)
 
-    if st.button("🔍 Analyze and Recommend Surgery"):
-        result = process_case(age, sphere, cylinder, bcva, k1, k2, pachy, optical_zone)
-
-        st.markdown("### ✅ Postoperative Calculations")
-        st.write(f"**Post-op K1:** {result['Post-op K1']} D")
-        st.write(f"**Post-op K2:** {result['Post-op K2']} D")
-        st.write(f"**Post-op K average:** {result['Post-op K avg']} D")
-        st.write(f"**Ablation Depth:** {result['Ablation Depth (µm)']} µm")
-        st.write(f"**Post-op Pachymetry:** {result['Post-op Pachymetry (µm)']} µm")
-        st.write(f"**Post-op BCVA:** {result['Post-op BCVA']}")
-
-        st.markdown("### 📌 Surgical Recommendation")
-        st.success(f"**{result['Recommendation']}**")
-
-        if result["Warnings"]:
-            st.markdown("### ⚠️ Warnings")
-            for warning in result["Warnings"]:
-                st.warning(warning)
-        else:
-            st.success("No warnings detected.")
-
     st.markdown("---")
     st.markdown("📝 *Optional: Upload CSV to Auto-Fill (overrides manual fields)*", unsafe_allow_html=True)
 
@@ -103,6 +82,28 @@ def main():
 
         result_df = pd.DataFrame(results)
         st.dataframe(result_df)
+
+    st.markdown("---")
+    if st.button("🔍 Analyze and Recommend Surgery"):
+        result = process_case(age, sphere, cylinder, bcva, k1, k2, pachy, optical_zone)
+
+        st.markdown("### ✅ Postoperative Calculations")
+        st.write(f"**Post-op K1:** {result['Post-op K1']} D")
+        st.write(f"**Post-op K2:** {result['Post-op K2']} D")
+        st.write(f"**Post-op K average:** {result['Post-op K avg']} D")
+        st.write(f"**Ablation Depth:** {result['Ablation Depth (µm)']} µm")
+        st.write(f"**Post-op Pachymetry:** {result['Post-op Pachymetry (µm)']} µm")
+        st.write(f"**Post-op BCVA:** {result['Post-op BCVA']}")
+
+        st.markdown("### 📌 Surgical Recommendation")
+        st.success(f"**{result['Recommendation']}**")
+
+        if result["Warnings"]:
+            st.markdown("### ⚠️ Warnings")
+            for warning in result["Warnings"]:
+                st.warning(warning)
+        else:
+            st.success("No warnings detected.")
 
 if __name__ == "__main__":
     main()

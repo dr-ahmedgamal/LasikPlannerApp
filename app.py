@@ -1,5 +1,4 @@
 import streamlit as st
-import pandas as pd
 from logic import (
     calculate_postop_k,
     calculate_ablation_depth,
@@ -9,52 +8,58 @@ from logic import (
     check_warnings,
 )
 
-st.title("LASIK Surgical Planner")
+def main():
+    st.title("LASIK Outcome Prediction & Surgical Recommendation")
 
-st.write(
-    "<small style='font-size:12px;'>Optional: Upload CSV to Auto-Fill (overrides manual fields)</small>",
-    unsafe_allow_html=True,
-)
+    # Input fields
+    k1_pre = st.number_input("Pre-op K1 (D)", value=43.0)
+    k2_pre = st.number_input("Pre-op K2 (D)", value=44.0)
+    sphere = st.number_input("Sphere (D)", value=-4.0)
+    cylinder = st.number_input("Cylinder (D)", value=-1.0)
+    pachy_pre = st.number_input("Pre-op Pachymetry (µm)", value=540)
+    bcva_pre = st.number_input("Pre-op BCVA (Decimal, e.g. 1.0)", value=1.0, min_value=0.0, max_value=2.0)
+    age = st.number_input("Age (years)", min_value=10, max_value=100, value=30)
+    optical_zone = st.number_input("Optical Zone (mm)", min_value=5.0, max_value=8.0, value=6.5)
 
-# Manual input fields in specified order with initial values
-age = st.number_input("Age", min_value=18, max_value=120, value=18, step=1)
-sphere = st.number_input("Sphere", value=0.00, step=0.25, format="%.2f")
-cylinder = st.number_input("Cylinder", value=0.00, step=0.25, format="%.2f")
-bcva = st.number_input("Pre-op BCVA", min_value=0.0, max_value=1.5, value=1.0, step=0.01, format="%.2f")
-k1_pre = st.number_input("K1 (pre-op)", value=43.00, step=0.01, format="%.2f")
-k2_pre = st.number_input("K2 (pre-op)", value=44.00, step=0.01, format="%.2f")
-pachy_pre = st.number_input("Pachymetry (pre-op)", min_value=300, max_value=700, value=540, step=1)
-optical_zone = st.number_input("Optical Zone (mm)", min_value=5.0, max_value=8.0, value=6.0, step=0.1, format="%.1f")
+    if st.button("Calculate Outcomes and Recommend Surgery"):
+        # Calculate post-op K values
+        k1_post, k2_post = calculate_postop_k(k1_pre, k2_pre, sphere, cylinder)
+        k_avg_post = round((k1_post + k2_post) / 2, 2)
+        k_avg_pre = round((k1_pre + k2_pre) / 2, 2)
 
-uploaded_file = st.file_uploader("Upload patient data CSV", type=["csv"])
+        # Calculate ablation depth
+        ablation_depth = calculate_ablation_depth(sphere, cylinder, optical_zone)
 
-# If CSV uploaded, override manual inputs with first row of CSV data
-if uploaded_file is not None:
-    df_uploaded = pd.read_csv(uploaded_file)
-    if not df_uploaded.empty:
-        first_row = df_uploaded.iloc[0]
-        age = first_row.get("Age", age)
-        sphere = first_row.get("Sphere", sphere)
-        cylinder = first_row.get("Cylinder", cylinder)
-        bcva = first_row.get("BCVA_pre", bcva)
-        k1_pre = first_row.get("K1_pre", k1_pre)
-        k2_pre = first_row.get("K2_pre", k2_pre)
-        pachy_pre = first_row.get("Pachymetry_pre", pachy_pre)
-        optical_zone = first_row.get("Optical_Zone", optical_zone)
+        # Calculate post-op pachymetry
+        pachy_post, _ = calculate_postop_pachymetry(pachy_pre, sphere, cylinder, optical_zone)
 
-if st.button("Calculate Post-op Data and Recommend Surgery"):
-    K1_post, K2_post = calculate_postop_k(k1_pre, k2_pre, sphere, cylinder)
-    k_avg_post = (K1_post + K2_post) / 2
-    ablation_depth = calculate_ablation_depth(sphere, cylinder, optical_zone)
-    pachy_post = calculate_postop_pachymetry(pachy_pre, ablation_depth, sphere)
-    bcva_post = calculate_postop_bcva(bcva, sphere)
-    surgery = determine_surgery(sphere, cylinder, pachy_pre, pachy_post, k_avg_post, age)
-    warnings = check_warnings((k1_pre + k2_pre) / 2, pachy_pre, pachy_post, sphere, bcva_post, cylinder)
+        # Calculate post-op BCVA
+        bcva_post = calculate_postop_bcva(bcva_pre, sphere)
 
-    st.write("### Results")
-    st.write(f"Post-op K1: {K1_post:.2f} D")
-    st.write(f"Post-op K2: {K2_post:.2f} D")
-    st.write(f"Post-op Average K: {k_avg_post:.2f} D")
-    st.write(f"Ablation Depth: {ablation_depth:.2f} µm")
-    st.write(f"Post-op Pachymetry: {pachy_post:.2f} µm")
-    st.write(f"Post-op BC
+        # Determine surgery recommendation
+        recommended_surgery = determine_surgery(sphere, cylinder, pachy_pre, pachy_post, k_avg_post, age, ablation_depth)
+
+        # Warnings
+        warnings = check_warnings(k_avg_pre, pachy_pre, pachy_post, sphere, bcva_post, cylinder)
+
+        # Display results
+        st.subheader("Postoperative Outcomes:")
+        st.write(f"Post-op K1: {k1_post} D")
+        st.write(f"Post-op K2: {k2_post} D")
+        st.write(f"Post-op K average: {k_avg_post} D")
+        st.write(f"Ablation Depth: {ablation_depth} µm")
+        st.write(f"Post-op Pachymetry: {pachy_post} µm")
+        st.write(f"Post-op BCVA (Decimal): {bcva_post}")
+
+        st.subheader("Surgical Recommendation:")
+        st.write(f"**{recommended_surgery}**")
+
+        if warnings:
+            st.subheader("Warnings & Notes:")
+            for warning in warnings:
+                st.warning(warning)
+        else:
+            st.success("No warnings detected.")
+
+if __name__ == "__main__":
+    main()

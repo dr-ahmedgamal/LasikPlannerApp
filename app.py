@@ -9,79 +9,86 @@ from logic import (
     check_warnings,
 )
 
-st.set_page_config(page_title="Refractive Surgery Planner", layout="centered")
 
-st.title("🔍 Refractive Surgery Planner")
+def app():
+    st.title("LASIK & IOL Surgical Recommendation Tool")
 
-st.markdown("### Enter Patient Data")
-
-# Input fields
-col1, col2, col3, col4 = st.columns(4)
-with col1:
+    # Input cells arranged exactly as requested
     age = st.number_input("Age", min_value=18, max_value=100, value=18, step=1)
-with col2:
-    sphere = st.number_input("Sphere", value=0.00, format="%.2f", step=0.25)
-with col3:
-    cylinder = st.number_input("Cylinder", value=0.00, format="%.2f", step=0.25)
-with col4:
-    bcva = st.number_input("BCVA", min_value=0.0, max_value=1.5, value=1.0, step=0.1)
+    sphere = st.number_input("Sphere (D)", value=0.00, step=0.25, format="%.2f")
+    cylinder = st.number_input("Cylinder (D)", value=0.00, step=0.25, format="%.2f")
+    bcva = st.number_input("BCVA (decimal)", min_value=0.0, max_value=2.0, value=1.0, step=0.01, format="%.2f")
+    k1 = st.number_input("K1 (D)", min_value=30.0, max_value=60.0, value=43.00, step=0.1, format="%.2f")
+    k2 = st.number_input("K2 (D)", min_value=30.0, max_value=60.0, value=44.00, step=0.1, format="%.2f")
+    pachy = st.number_input("Pachymetry (µm)", min_value=300, max_value=700, value=520, step=1)
+    optical_zone = st.number_input("Optical Zone (mm)", min_value=5.0, max_value=8.0, value=6.5, step=0.1, format="%.1f")
 
-col5, col6, col7, col8 = st.columns(4)
-with col5:
-    k1 = st.number_input("K1", value=43.0, format="%.2f", step=0.1)
-with col6:
-    k2 = st.number_input("K2", value=44.0, format="%.2f", step=0.1)
-with col7:
-    pachy = st.number_input("Pachymetry", min_value=300, max_value=700, value=520, step=1)
-with col8:
-    optical_zone = st.number_input("Optical Zone (mm)", min_value=5.0, max_value=7.0, value=6.5, step=0.1)
+    st.markdown("")  # Small vertical space before upload section
 
-# Optional upload
-st.markdown("##### Upload Data File (CSV or TXT):", help="Optional. Auto-fill fields from file.")
-uploaded_file = st.file_uploader("", type=["csv", "txt"])
+    # Upload section header with smaller font
+    st.markdown(
+        '<p style="font-size:14px; font-weight:normal;">📝 Input Patient Data Manually or Upload a File</p>',
+        unsafe_allow_html=True,
+    )
+    uploaded_file = st.file_uploader("", type=["csv", "txt"], help="Upload CSV or TXT file")
 
-if uploaded_file is not None:
-    try:
-        if uploaded_file.name.endswith(".csv"):
-            df = pd.read_csv(uploaded_file)
-        elif uploaded_file.name.endswith(".txt"):
-            df = pd.read_csv(uploaded_file, sep=None, engine="python")
+    # If file uploaded, read and override inputs with first row data
+    if uploaded_file is not None:
+        try:
+            if uploaded_file.name.endswith(".csv"):
+                df = pd.read_csv(uploaded_file)
+            else:
+                df = pd.read_csv(uploaded_file, delimiter="\t")  # assume tab-delimited if txt
+            if not df.empty:
+                # Override inputs with first row values (if present)
+                age = int(df.iloc[0].get("age", age))
+                sphere = float(df.iloc[0].get("sphere", sphere))
+                cylinder = float(df.iloc[0].get("cylinder", cylinder))
+                bcva = float(df.iloc[0].get("bcva", bcva))
+                k1 = float(df.iloc[0].get("k1", k1))
+                k2 = float(df.iloc[0].get("k2", k2))
+                pachy = float(df.iloc[0].get("pachymetry", pachy))
+                optical_zone = float(df.iloc[0].get("optical_zone", optical_zone))
+        except Exception as e:
+            st.error(f"Error reading uploaded file: {e}")
 
-        # Fill inputs with first row
-        if not df.empty:
-            age = df.at[0, "age"]
-            sphere = df.at[0, "sphere"]
-            cylinder = df.at[0, "cylinder"]
-            bcva = df.at[0, "bcva"]
-            k1 = df.at[0, "k1"]
-            k2 = df.at[0, "k2"]
-            pachy = df.at[0, "pachy"]
-            optical_zone = df.at[0, "optical_zone"]
-    except Exception as e:
-        st.error(f"❌ Error reading file: {e}")
+    st.markdown("")  # small space before button
 
-# Button
-st.markdown("###")
-if st.button("🔎 Analyze and Recommend", help="Run analysis based on input data.", use_container_width=True):
-    k1_post, k2_post = calculate_postop_k(k1, k2, sphere, cylinder)
-    k_avg_post = round((k1_post + k2_post) / 2, 2)
-    k_avg_pre = round((k1 + k2) / 2, 2)
+    # Larger Analyze and Recommend button
+    if st.button("Analyze and Recommend", use_container_width=True):
+        # Calculate postop K
+        k1_post, k2_post = calculate_postop_k(k1, k2, sphere, cylinder)
+        k_avg_post = round((k1_post + k2_post) / 2, 2)
 
-    pachy_post, ablation_depth = calculate_postop_pachymetry(pachy, sphere, cylinder, optical_zone)
-    bcva_post = calculate_postop_bcva(bcva, sphere)
+        # Calculate postop pachymetry and ablation depth
+        pachy_post, ablation_depth = calculate_postop_pachymetry(pachy, sphere, cylinder, optical_zone)
 
-    surgery = determine_surgery(sphere, cylinder, pachy, pachy_post, k_avg_post, age)
-    warnings = check_warnings(k_avg_pre, pachy, pachy_post, sphere, bcva_post, cylinder)
+        # Calculate postop BCVA
+        bcva_post = calculate_postop_bcva(bcva, sphere)
 
-    st.subheader("📊 Results")
-    st.write(f"**Post-op K1:** {k1_post} D")
-    st.write(f"**Post-op K2:** {k2_post} D")
-    st.write(f"**Post-op Pachymetry:** {pachy_post} µm")
-    st.write(f"**Post-op BCVA:** {bcva_post}")
-    st.write(f"**Ablation Depth:** {ablation_depth} µm")
-    st.write(f"**Recommended Surgery:** {surgery}")
+        # Determine surgery recommendation
+        recommendation = determine_surgery(sphere, cylinder, pachy, pachy_post, k_avg_post, age)
 
-    if warnings:
-        st.warning("⚠️ Warnings:")
-        for w in warnings:
-            st.write(f"- {w}")
+        # Check warnings
+        warnings = check_warnings(k_avg_post, pachy, pachy_post, sphere, bcva_post, cylinder)
+        # Add postop k_avg warning
+        if k_avg_post < 36 or k_avg_post > 49:
+            warnings.append("Warning: Post-op K average out of range (36-49 D)")
+
+        # Display results
+        st.subheader("Results:")
+        st.markdown(f"- **Post-op K1:** {k1_post} D")
+        st.markdown(f"- **Post-op K2:** {k2_post} D")
+        st.markdown(f"- **Post-op K Average:** {k_avg_post} D")
+        st.markdown(f"- **Post-op Pachymetry:** {pachy_post} µm")
+        st.markdown(f"- **Ablation Depth:** {ablation_depth} µm")
+        st.markdown(f"- **Post-op BCVA:** {bcva_post}")
+        st.markdown(f"- **Recommended Surgery:** {recommendation}")
+
+        if warnings:
+            st.warning("Warnings:")
+            for w in warnings:
+                st.write(f"- {w}")
+
+if __name__ == "__main__":
+    app()

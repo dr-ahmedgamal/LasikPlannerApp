@@ -1,48 +1,55 @@
-# app.py
-import streamlit as st
-import pandas as pd
-from logic import calculate_postop_k, calculate_postop_pachymetry, calculate_postop_bcva, determine_surgery, check_warnings
+def calculate_ablation_depth(sphere: float, cylinder: float) -> float:
+    # Ablation depth formula:
+    # Myopia: 15 * (|sphere| + |cylinder|)
+    # Hyperopia: 1 * (|sphere| + |cylinder|)
+    if sphere <= 0:  # myopia or zero
+        return 15 * (abs(sphere) + abs(cylinder))
+    else:  # hyperopia
+        return 1 * (abs(sphere) + abs(cylinder))
 
-st.set_page_config(page_title="LASIK Planner", layout="centered")
-st.title('👁️ LASIK Surgical Planner')
+def calculate_postop_k(K1_pre: float, K2_pre: float, sphere: float, cylinder: float) -> tuple:
+    abs_sphere = abs(sphere)
+    abs_cyl = abs(cylinder)
+    if sphere <= 0:  # myopia
+        delta_K1 = abs_sphere * 0.8
+        delta_K2 = (abs_sphere + abs_cyl) * 0.8
+        K1_post = K1_pre - delta_K1
+        K2_post = K2_pre - delta_K2
+    else:  # hyperopia
+        delta_K1 = abs_sphere * 1.2
+        delta_K2 = (abs_sphere + abs_cyl) * 1.2
+        K1_post = K1_pre + delta_K1
+        K2_post = K2_pre + delta_K2
+    return round(K1_post, 2), round(K2_post, 2)
 
-st.markdown("### Enter Patient Data")
-age = st.number_input("Age", min_value=18, max_value=100, value=18, step=1)
-k1_pre = st.number_input("K1 (D)", min_value=30.0, max_value=60.0, value=43.00, step=0.01)
-k2_pre = st.number_input("K2 (D)", min_value=30.0, max_value=60.0, value=44.00, step=0.01)
-pachy_pre = st.number_input("Pachymetry (µm)", min_value=350.0, max_value=700.0, value=520.0, step=1.0)
-bcva_pre = st.number_input("Pre-op BCVA", min_value=0.1, max_value=2.0, value=1.0, step=0.1)
-sphere = st.number_input("Sphere (D)", min_value=-20.0, max_value=20.0, value=0.00, step=0.25)
-cylinder = st.number_input("Cylinder (D)", min_value=-6.0, max_value=6.0, value=0.00, step=0.25)
+def calculate_postop_pachymetry(pachy_pre: float, ablation_depth: float) -> float:
+    pachy_post = pachy_pre - ablation_depth
+    return round(pachy_post, 2)
 
-st.markdown("<p style='font-size: small;'>Optional: Upload CSV to Auto-Fill (overrides manual fields)</p>", unsafe_allow_html=True)
-uploaded_file = st.file_uploader("Upload sample data", type=["csv"])
+def calculate_postop_bcva(bcva_pre: float, sphere: float) -> float:
+    # BCVA improvement formula considering minification elimination
+    # bcva_post = bcva_pre * (1 + (|SE| / 10)), capped at 1.5
+    bcva_post = bcva_pre * (1 + (abs(sphere) / 10))
+    return round(min(bcva_post, 1.5), 2)
 
-if uploaded_file:
-    df = pd.read_csv(uploaded_file)
-    first_row = df.iloc[0]
-    age = first_row['Age']
-    k1_pre = first_row['K1_pre']
-    k2_pre = first_row['K2_pre']
-    pachy_pre = first_row['Pachymetry_pre']
-    bcva_pre = first_row['BCVA_pre']
-    sphere = first_row['Sphere']
-    cylinder = first_row['Cylinder']
+def determine_surgery(sphere: float, cylinder: float, pachy_pre: float, pachy_post: float, k_avg_post: float, age: int) -> str:
+    SE = sphere + cylinder
+    # Surgery decision logic
+    if pachy_pre >= 500 and pachy_post >= 410 and 36 <= k_avg_post <= 49:
+        return "LASIK"
+    elif SE < 0 and 460 <= pachy_pre < 500 and pachy_post >= 410 and 36 <= k_avg_post <= 49:
+        return "PRK"
+    else:
+        return "Phakic IOL"
 
-if st.button("Calculate"):
-    k1_post, k2_post = calculate_postop_k(k1_pre, k2_pre, sphere, cylinder)
-    kavg_post = (k1_post + k2_post) / 2
-    ablation_depth = 15 * (abs(sphere) + abs(cylinder)) if sphere <= 0 else 1 * (abs(sphere) + abs(cylinder))
-    pachy_post = calculate_postop_pachymetry(pachy_pre, ablation_depth)
-    bcva_post = calculate_postop_bcva(bcva_pre, sphere)
-    surgery = determine_surgery(sphere, cylinder, pachy_pre, pachy_post, kavg_post, age)
-    warnings = check_warnings((k1_pre + k2_pre)/2, pachy_pre, pachy_post, sphere, bcva_post)
-
-    st.subheader("Calculated Results")
-    st.write(f"**Post-op K1:** {round(k1_post, 2)} D")
-    st.write(f"**Post-op K2:** {round(k2_post, 2)} D")
-    st.write(f"**Post-op Kavg:** {round(kavg_post, 2)} D")
-    st.write(f"**Post-op Pachymetry:** {round(pachy_post, 2)} µm")
-    st.write(f"**Post-op BCVA:** {round(bcva_post, 2)}")
-    st.write(f"**Recommended Surgery:** {surgery}")
-    st.write(f"**Warnings:** {', '.join(warnings) if warnings else 'None'}")
+def check_warnings(k_avg_pre: float, pachy_pre: float, pachy_post: float, sphere: float, bcva_post: float) -> list:
+    warnings = []
+    if k_avg_pre > 49 and pachy_pre < 500:
+        warnings.append("Keratoconus Risk")
+    if pachy_post < 410:
+        warnings.append("Ectasia Risk")
+    if sphere + 0 > 6:  # flag extreme hyperopia if SE > +6
+        warnings.append("Extreme Hyperopia")
+    if bcva_post < 0.5:
+        warnings.append("Poor Vision")
+    return warnings

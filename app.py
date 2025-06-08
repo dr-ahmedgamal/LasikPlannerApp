@@ -9,11 +9,10 @@ from logic import (
     check_warnings,
 )
 
-
 def app():
     st.title("LASIK & IOL Surgical Recommendation Tool")
 
-    # Input cells arranged exactly as requested
+    # Input cells arranged as requested
     age = st.number_input("Age", min_value=18, max_value=100, value=18, step=1)
     sphere = st.number_input("Sphere (D)", value=0.00, step=0.25, format="%.2f")
     cylinder = st.number_input("Cylinder (D)", value=0.00, step=0.25, format="%.2f")
@@ -23,14 +22,14 @@ def app():
     pachy = st.number_input("Pachymetry (µm)", min_value=300, max_value=700, value=520, step=1)
     optical_zone = st.number_input("Optical Zone (mm)", min_value=5.0, max_value=8.0, value=6.5, step=0.1, format="%.1f")
 
-    # Larger vertical space between inputs and upload
+    # Spacer before upload
     st.write("")
     st.write("")
     st.write("")
 
-    # Upload section header with smaller font, close to uploader
+    # Upload section with smaller header font and minimal text, close to uploader
     st.markdown(
-        '<p style="font-size:14px; font-weight:normal; margin-bottom: 4px;">📝 Input Patient Data Manually or Upload a File</p>',
+        '<p style="font-size:14px; font-weight:normal; margin-bottom: 4px;">📝 Input Data Manually or Upload File</p>',
         unsafe_allow_html=True,
     )
     uploaded_file = st.file_uploader("", type=["csv", "txt"], help="Upload CSV or TXT file")
@@ -53,47 +52,36 @@ def app():
         except Exception as e:
             st.error(f"Error reading uploaded file: {e}")
 
-    # Small space before button
+    # Small spacer before button
     st.write("")
     st.write("")
 
-    # Custom large, obvious button using markdown + JS click
-    button_clicked = st.button("Analyze and Recommend", key="hidden_button", help="Click to analyze")
-
-    # Use custom styled button (bigger font, padding)
-    # We simulate a bigger button via markdown + JS
+    # Style for the big blue medical button
     st.markdown(
         """
         <style>
-        .big-button {
-            background-color:#4CAF50;
-            border:none;
-            color:white;
-            padding:15px 0;
-            text-align:center;
-            text-decoration:none;
-            display:block;
-            font-size:22px;
-            font-weight:bold;
-            margin: auto;
+        div.stButton > button {
+            background-color: #007ACC;
+            color: white;
+            font-size: 22px;
+            font-weight: bold;
+            padding: 15px 0;
+            border-radius: 10px;
             width: 100%;
+            transition: background-color 0.3s ease;
+            border: none;
             cursor: pointer;
-            border-radius: 8px;
-            user-select: none;
         }
-        .big-button:hover {
-            background-color:#45a049;
+        div.stButton > button:hover {
+            background-color: #005A9E;
         }
         </style>
-        <div class="big-button" onclick="document.querySelector('button[kind=primary]').click();">
-            Analyze and Recommend
-        </div>
         """,
         unsafe_allow_html=True,
     )
 
-    # Only proceed if either button is clicked (hidden or styled div triggers hidden button)
-    if button_clicked:
+    # Single analyze button
+    if st.button("Analyze and Recommend"):
         k1_post, k2_post = calculate_postop_k(k1, k2, sphere, cylinder)
         k_avg_post = round((k1_post + k2_post) / 2, 2)
 
@@ -105,6 +93,7 @@ def app():
 
         warnings = check_warnings(k_avg_post, pachy, pachy_post, sphere, bcva_post, cylinder)
 
+        # Add postop K average warning
         if k_avg_post < 36 or k_avg_post > 49:
             warnings.append("Warning: Post-op K average out of range (36-49 D)")
 

@@ -1,150 +1,169 @@
-# logic.py
-
-def calculate_ablation_depth(sphere: float, cylinder: float, optical_zone: float) -> float:
+def calculate_postop_k(k1_pre, k2_pre, sphere, cylinder):
     """
-    Calculate ablation depth using the Munnerlyn formula with 1.1 correction factor.
-    Ablation Depth = 1.1 * (Optical Zone^2) * (|Sphere| + |Cylinder|) / 3
-    """
-    return 1.1 * (optical_zone ** 2) * (abs(sphere) + abs(cylinder)) / 3
+    Calculate post-op K1 and K2 using your latest formulas.
 
+    Myopia:
+        ΔK1 = |Sphere| × 0.8
+        ΔK2 = (|Sphere| + |Cylinder|) × 0.8
+        Post-op = Pre-op - ΔK
 
-def calculate_postop_keratometry(sphere: float, cylinder: float, k1_pre: float, k2_pre: float) -> tuple[float, float, float]:
-    """
-    Calculate postoperative K1, K2, and average K using:
-    
-    Myopia (sphere <= 0):
-      ΔK1 = |Sphere| * 0.8
-      ΔK2 = (|Sphere| + |Cylinder|) * 0.8
-      K_post = K_pre - ΔK
-
-    Hyperopia (sphere > 0):
-      ΔK1 = |Sphere| * 1.2
-      ΔK2 = (|Sphere| - |Cylinder|) * 1.2
-      K_post = K_pre + ΔK
+    Hyperopia:
+        ΔK1 = |Sphere| × 1.2
+        ΔK2 = (|Sphere| - |Cylinder|) × 1.2  # Use difference, not sum
+        Post-op = Pre-op + ΔK
     """
     abs_sphere = abs(sphere)
-    abs_cyl = abs(cylinder)
+    abs_cylinder = abs(cylinder)
 
-    if sphere <= 0:  # Myopia
+    if sphere < 0:  # Myopia
         delta_k1 = abs_sphere * 0.8
-        delta_k2 = (abs_sphere + abs_cyl) * 0.8
+        delta_k2 = (abs_sphere + abs_cylinder) * 0.8
         k1_post = k1_pre - delta_k1
         k2_post = k2_pre - delta_k2
     else:  # Hyperopia
         delta_k1 = abs_sphere * 1.2
-        delta_k2 = (abs_sphere - abs_cyl) * 1.2
+        delta_k2 = (abs_sphere - abs_cylinder) * 1.2
         k1_post = k1_pre + delta_k1
         k2_post = k2_pre + delta_k2
 
-    kavg_post = (k1_post + k2_post) / 2
-    return k1_post, k2_post, kavg_post
+    return round(k1_post, 2), round(k2_post, 2)
 
 
-def calculate_postop_pachymetry(sphere: float, pachy_pre: float, ablation_depth: float) -> float:
+def calculate_ablation_depth(sphere, cylinder, optical_zone):
     """
-    Calculate postoperative pachymetry:
-    - For myopia: subtract ablation depth from pre-op pachy
-    - For hyperopia: subtract fixed 6 µm from pre-op pachy (ablation peripheral, no thickness subtraction)
+    Ablation Depth using Munnerlyn formula with 1.1 correction factor:
+    Ablation Depth = 1.1 × (Optical Zone^2 / 3) × (|Sphere| + |Cylinder|)
     """
-    if sphere <= 0:
+    abs_sphere = abs(sphere)
+    abs_cylinder = abs(cylinder)
+    ablation_depth = 1.1 * ((optical_zone ** 2) / 3) * (abs_sphere + abs_cylinder)
+    return round(ablation_depth, 2)
+
+
+def calculate_postop_pachymetry(pachy_pre, sphere, cylinder, optical_zone):
+    """
+    Post-op pachymetry calculation:
+    - Myopia: Subtract ablation depth from pre-op pachy
+    - Hyperopia: Subtract fixed 6 µm from pre-op pachy (not ablation depth)
+    """
+    ablation_depth = calculate_ablation_depth(sphere, cylinder, optical_zone)
+    if sphere < 0:  # Myopia
         pachy_post = pachy_pre - ablation_depth
-    else:
-        pachy_post = pachy_pre - 6  # fixed decrement for hyperopia
-    return pachy_post
+    else:  # Hyperopia
+        pachy_post = pachy_pre - 6  # Fixed small decrease
+
+    return round(pachy_post, 2), ablation_depth
 
 
-def calculate_postop_bcva(bcva_pre: float, sphere: float) -> float:
+def calculate_postop_bcva(bcva_pre, sphere):
     """
-    Predict postoperative BCVA (best corrected visual acuity):
-    BCVA_post = min(BCVA_pre + (|SE| * 0.05), 1.5)
-    SE = Sphere + Cylinder, but here simplified as Sphere only.
+    Post-op BCVA approximation:
+    BCVA_post = min(BCVA_pre + (|SE| × 0.05), 1.5)
     """
-    se_abs = abs(sphere)
-    bcva_post = bcva_pre + (se_abs * 0.05)
-    if bcva_post > 1.5:
-        bcva_post = 1.5
-    return bcva_post
+    abs_sphere = abs(sphere)
+    bcva_post = bcva_pre + (abs_sphere * 0.05)
+    return round(min(bcva_post, 1.5), 2)
 
 
-def determine_surgery(sphere: float, cylinder: float, pachy_pre: float, pachy_post: float, k_avg_post: float, age: int) -> str:
+def determine_surgery(sphere, cylinder, pachy_pre, pachy_post, k_avg_post, age):
     """
-    Determine recommended surgery based on criteria:
+    Determine recommended surgery based on updated criteria:
 
-    LASIK criteria:
-      - SE between -12 and +7
-      - Pre-op pachy ≥ 480
-      - Post-op pachy ≥ 410
-      - Post-op K_avg in [36, 49]
-      - Max ablation depth ≤ 140
+    LASIK:
+      - Pre-op pachy ≥ 500 µm
+      - Post-op pachy ≥ 410 µm
+      - SE between -12 and +7 D
+      - Post-op K_avg between 36 and 49 D
+      - Cylinder ≤ 6 D
+      - Max ablation depth ≤ 140 µm (checked externally)
 
-    PRK criteria:
-      - SE < 0
-      - Pre-op pachy > 460
-      - Post-op pachy ≥ 400
-      - Post-op K_avg in [36, 49]
-      - Max ablation depth ≤ 90
+    PRK:
+      - Sphere < 0 (myopia only)
+      - Pre-op pachy > 460 µm
+      - Post-op pachy ≥ 400 µm
+      - Post-op K_avg between 36 and 49 D
+      - Cylinder ≤ 6 D
+      - Max ablation depth ≤ 90 µm (checked externally)
 
     Phakic IOL:
-      - SE ≤ -8 or SE ≥ +7
-      - Cornea not suitable (not met by LASIK/PRK)
+      - SE ≤ -8 D or SE ≥ +7 D
       - Age < 40
 
     Pseudophakic IOL:
-      - Same SE criteria as Phakic IOL
+      - Same SE as Phakic IOL
       - Age ≥ 40
 
-    If both LASIK and PRK eligible, recommend both with LASIK first.
+    If both LASIK and PRK eligible, recommend "LASIK / PRK" (LASIK first)
     """
-    se = sphere + cylinder
-    max_ablation_myopia = 140
-    max_ablation_prk = 90
+
+    se = sphere + (cylinder / 2)
+    abs_cylinder = abs(cylinder)
 
     lasik_eligible = (
-        -12 <= se <= 7 and
-        pachy_pre >= 480 and
-        pachy_post >= 410 and
-        36 <= k_avg_post <= 49
+        pachy_pre >= 500
+        and pachy_post >= 410
+        and (-12 <= se <= 7)
+        and (36 <= k_avg_post <= 49)
+        and abs_cylinder <= 6
     )
+
     prk_eligible = (
-        se < 0 and
-        pachy_pre > 460 and
-        pachy_post >= 400 and
-        36 <= k_avg_post <= 49
+        sphere < 0
+        and pachy_pre > 460
+        and pachy_post >= 400
+        and (36 <= k_avg_post <= 49)
+        and abs_cylinder <= 6
     )
 
-    # Ablation depth calculation should be done externally for max ablation check, assumed satisfied here.
+    phakic_iol_eligible = (
+        (abs(se) >= 8 or se >= 7)
+        and age < 40
+    )
 
-    if lasik_eligible and prk_eligible:
-        return "LASIK / PRK"
+    pseudophakic_iol_eligible = (
+        (abs(se) >= 8 or se >= 7)
+        and age >= 40
+    )
+
+    options = []
     if lasik_eligible:
-        return "LASIK"
+        options.append("LASIK")
     if prk_eligible:
-        return "PRK"
+        options.append("PRK")
+    if phakic_iol_eligible:
+        options.append("Phakic IOL")
+    if pseudophakic_iol_eligible:
+        options.append("Pseudophakic IOL")
 
-    # IOL eligibility
-    if (se <= -8 or se >= 7):
-        if age < 40:
-            return "Phakic IOL"
-        else:
-            return "Pseudophakic IOL"
-
-    return "No suitable surgery"
+    if "LASIK" in options and "PRK" in options:
+        return "LASIK / PRK"
+    elif options:
+        return " / ".join(options)
+    else:
+        return "No suitable surgery recommended"
 
 
-def check_warnings(k_avg_pre: float, pachy_pre: float, pachy_post: float, cylinder: float, bcva_post: float) -> list:
+def check_warnings(k_avg_pre, pachy_pre, pachy_post, sphere, bcva_post, cylinder=0):
     """
-    Return warnings as a list of strings based on thresholds:
+    Warning flags based on latest thresholds:
 
-    - Thin cornea warning if pre-op pachymetry < 480
-    - Extreme cylinder warning if cylinder < -6
-    - BCVA decline warning if post-op BCVA worse than 1.0 (arbitrary threshold)
+    - Thin cornea pre-op: pachy < 480 µm
+    - Thin cornea post-op: pachy < 400 µm
+    - Extreme cylinder: cylinder < -6 D (negative values)
+    - BCVA decrease potential: post-op BCVA < 1.0
+    - Pre-op K average out of range (36-49 D)
     """
     warnings = []
+
     if pachy_pre < 480:
-        warnings.append("Thin cornea (Pre-op pachy < 480 µm)")
+        warnings.append("Warning: Thin cornea pre-op (<480 µm)")
+    if pachy_post < 400:
+        warnings.append("Warning: Thin cornea post-op (<400 µm)")
     if cylinder < -6:
-        warnings.append("Extreme cylinder (< -6 D)")
-    if bcva_post > 1.0:
-        warnings.append("Possible BCVA decline")
+        warnings.append("Warning: Extreme cylinder (>6 D)")
+    if bcva_post < 1.0:
+        warnings.append("Warning: Potential BCVA decrease")
+    if not (36 <= k_avg_pre <= 49):
+        warnings.append("Warning: Pre-op K average out of range (36-49 D)")
 
     return warnings

@@ -62,27 +62,26 @@ if uploaded_file:
 # --- Spacer before button ---
 st.markdown("<br><br>", unsafe_allow_html=True)
 
-# --- Very Large Centered Button ---
-button_container = st.columns([1, 2, 1])[1]
-with button_container:
-    clicked = st.button("🧠 Refractive Plan", use_container_width=True)
+# --- Large Centered Button Container ---
+button_col = st.columns([1, 2, 1])[1]
+with button_col:
+    clicked = st.button("🧠 Refractive Plan", key="plan_button")
 
-# --- Enlarge and Bold Button Style ---
-st.markdown(
-    """
+# --- Inject CSS for Styling the Button ---
+st.markdown("""
     <style>
     div[data-testid="stButton"] button {
         font-size: 28px !important;
-        height: 70px !important;
-        font-weight: 900 !important;
-        background-color: #007BFF;
-        color: white;
-        border-radius: 8px;
+        font-weight: bold !important;
+        padding: 20px 40px !important;
+        background-color: #1f77b4 !important;
+        color: white !important;
+        border-radius: 10px !important;
+        width: 100% !important;
+        text-align: center !important;
     }
     </style>
-    """,
-    unsafe_allow_html=True
-)
+""", unsafe_allow_html=True)
 
 # --- Results Section ---
 if clicked:

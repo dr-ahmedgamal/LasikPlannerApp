@@ -17,7 +17,7 @@ st.markdown(
 )
 
 # --- Input Section ---
-st.markdown("### 👇 Enter Patient Data")
+st.markdown("### Patient Data")
 
 col1, col2, col3, col4 = st.columns(4)
 with col1:

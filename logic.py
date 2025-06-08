@@ -144,7 +144,7 @@ def determine_surgery(sphere, cylinder, pachy_pre, pachy_post, k_avg_post, age, 
         return "No suitable surgery recommended"
 
 
-def check_warnings(k_avg_pre, pachy_pre, pachy_post, sphere, bcva_post, cylinder=0):
+def check_warnings(k_avg_pre, pachy_pre, pachy_post, sphere, bcva_post, cylinder=0, k_avg_post=None):
     """
     Warning flags based on latest thresholds:
 
@@ -152,7 +152,8 @@ def check_warnings(k_avg_pre, pachy_pre, pachy_post, sphere, bcva_post, cylinder
     - Thin cornea post-op: pachy < 400 µm
     - Extreme cylinder: cylinder < -6 D (negative values)
     - BCVA decrease potential: post-op BCVA < 1.0
-    - Pre-op K average out of range (36-49 D)
+    - Pre-op K average out of range (36–49 D)
+    - Post-op K average out of range (36–49 D)
     """
     warnings = []
 
@@ -165,6 +166,9 @@ def check_warnings(k_avg_pre, pachy_pre, pachy_post, sphere, bcva_post, cylinder
     if bcva_post < 1.0:
         warnings.append("Warning: Potential BCVA decrease")
     if not (36 <= k_avg_pre <= 49):
-        warnings.append("Warning: Pre-op K average out of range (36-49 D)")
+        warnings.append("Warning: Pre-op K average out of range (36–49 D)")
+    if k_avg_post is not None and not (36 <= k_avg_post <= 49):
+        warnings.append("Warning: Post-op K average out of range (36–49 D)")
 
     return warnings
+

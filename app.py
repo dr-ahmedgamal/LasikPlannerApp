@@ -14,9 +14,9 @@ age = st.number_input("Age", min_value=10, max_value=100, value=18, step=1)
 
 col1, col2 = st.columns(2)
 with col1:
-    sphere = st.number_input("Sphere (D)", value=None, format="%.2f", step=0.25)
+    sphere = st.number_input("Sphere (D)", value=0.00, format="%.2f", step=0.25)
 with col2:
-    cylinder = st.number_input("Cylinder (D)", value=None, format="%.2f", step=0.25)
+    cylinder = st.number_input("Cylinder (D)", value=0.00, format="%.2f", step=0.25)
 
 col3, col4 = st.columns(2)
 with col3:
@@ -48,26 +48,23 @@ if uploaded_file:
 
 # --- Submit ---
 if st.button("📊 Calculate Results"):
-    if sphere is None or cylinder is None:
-        st.error("Please enter Sphere and Cylinder values.")
-    else:
-        K1_post, K2_post = calculate_postop_k(K1_pre, K2_pre, sphere, cylinder)
-        k_avg_post = (K1_post + K2_post) / 2
-        ablation_depth = 15 * (abs(sphere) + abs(cylinder)) if sphere <= 0 else 1 * (abs(sphere) + abs(cylinder))
-        pachy_post = calculate_postop_pachymetry(pachy_pre, ablation_depth)
-        bcva_post = calculate_postop_bcva(bcva_pre, sphere)
-        surgery = determine_surgery(sphere, cylinder, pachy_pre, pachy_post, k_avg_post, age)
-        warnings = check_warnings((K1_pre + K2_pre) / 2, pachy_pre, pachy_post, sphere, bcva_post)
+    K1_post, K2_post = calculate_postop_k(K1_pre, K2_pre, sphere, cylinder)
+    k_avg_post = (K1_post + K2_post) / 2
+    ablation_depth = 15 * (abs(sphere) + abs(cylinder)) if sphere <= 0 else 1 * (abs(sphere) + abs(cylinder))
+    pachy_post = calculate_postop_pachymetry(pachy_pre, ablation_depth)
+    bcva_post = calculate_postop_bcva(bcva_pre, sphere)
+    surgery = determine_surgery(sphere, cylinder, pachy_pre, pachy_post, k_avg_post, age)
+    warnings = check_warnings((K1_pre + K2_pre) / 2, pachy_pre, pachy_post, sphere, bcva_post)
 
-        st.write("### ✅ Results")
-        st.write(f"**Post-op K1:** {K1_post:.2f} D")
-        st.write(f"**Post-op K2:** {K2_post:.2f} D")
-        st.write(f"**Post-op Kavg:** {k_avg_post:.2f} D")
-        st.write(f"**Post-op Pachymetry:** {pachy_post:.2f} µm")
-        st.write(f"**Post-op BCVA:** {bcva_post:.2f}")
-        st.write(f"**Recommended Surgery:** {surgery}")
-        
-        if warnings:
-            st.warning(" ⚠ Warnings: " + " | ".join(warnings))
-        else:
-            st.success("✅ No warnings detected.")
+    st.write("### ✅ Results")
+    st.write(f"**Post-op K1:** {K1_post:.2f} D")
+    st.write(f"**Post-op K2:** {K2_post:.2f} D")
+    st.write(f"**Post-op Kavg:** {k_avg_post:.2f} D")
+    st.write(f"**Post-op Pachymetry:** {pachy_post:.2f} µm")
+    st.write(f"**Post-op BCVA:** {bcva_post:.2f}")
+    st.write(f"**Recommended Surgery:** {surgery}")
+    
+    if warnings:
+        st.warning(" ⚠ Warnings: " + " | ".join(warnings))
+    else:
+        st.success("✅ No warnings detected.")

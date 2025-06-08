@@ -1,4 +1,4 @@
-def calculate_postop_k(k1_pre, k2_pre, sphere, cylinder):
+def calculate_postop_k(k1_pre, k2_pre, sphere, cylinder): 
     """
     Calculate post-op K1 and K2 using your latest formulas.
 
@@ -65,7 +65,7 @@ def calculate_postop_bcva(bcva_pre, sphere):
     return round(min(bcva_post, 1.5), 2)
 
 
-def determine_surgery(sphere, cylinder, pachy_pre, pachy_post, k_avg_post, age):
+def determine_surgery(sphere, cylinder, pachy_pre, pachy_post, k_avg_post, age, max_ablation_depth):
     """
     Determine recommended surgery based on updated criteria:
 
@@ -75,7 +75,7 @@ def determine_surgery(sphere, cylinder, pachy_pre, pachy_post, k_avg_post, age):
       - SE between -12 and +7 D
       - Post-op K_avg between 36 and 49 D
       - Cylinder ≤ 6 D
-      - Max ablation depth ≤ 140 µm (checked externally)
+      - Max ablation depth ≤ 140 µm
 
     PRK:
       - Sphere < 0 (myopia only)
@@ -83,7 +83,7 @@ def determine_surgery(sphere, cylinder, pachy_pre, pachy_post, k_avg_post, age):
       - Post-op pachy ≥ 400 µm
       - Post-op K_avg between 36 and 49 D
       - Cylinder ≤ 6 D
-      - Max ablation depth ≤ 90 µm (checked externally)
+      - Max ablation depth ≤ 90 µm
 
     Phakic IOL:
       - SE ≤ -8 D or SE ≥ +7 D
@@ -95,7 +95,6 @@ def determine_surgery(sphere, cylinder, pachy_pre, pachy_post, k_avg_post, age):
 
     If both LASIK and PRK eligible, recommend "LASIK / PRK" (LASIK first)
     """
-
     se = sphere + (cylinder / 2)
     abs_cylinder = abs(cylinder)
 
@@ -105,6 +104,7 @@ def determine_surgery(sphere, cylinder, pachy_pre, pachy_post, k_avg_post, age):
         and (-12 <= se <= 7)
         and (36 <= k_avg_post <= 49)
         and abs_cylinder <= 6
+        and max_ablation_depth <= 140
     )
 
     prk_eligible = (
@@ -113,15 +113,16 @@ def determine_surgery(sphere, cylinder, pachy_pre, pachy_post, k_avg_post, age):
         and pachy_post >= 400
         and (36 <= k_avg_post <= 49)
         and abs_cylinder <= 6
+        and max_ablation_depth <= 90
     )
 
     phakic_iol_eligible = (
-        (abs(se) >= 8 or se >= 7)
+        (se <= -8 or se >= 7)
         and age < 40
     )
 
     pseudophakic_iol_eligible = (
-        (abs(se) >= 8 or se >= 7)
+        (se <= -8 or se >= 7)
         and age >= 40
     )
 

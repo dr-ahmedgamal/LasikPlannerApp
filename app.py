@@ -23,24 +23,25 @@ def app():
     pachy = st.number_input("Pachymetry (µm)", min_value=300, max_value=700, value=520, step=1)
     optical_zone = st.number_input("Optical Zone (mm)", min_value=5.0, max_value=8.0, value=6.5, step=0.1, format="%.1f")
 
-    st.markdown("")  # Small vertical space before upload section
+    # Larger vertical space between inputs and upload
+    st.write("")
+    st.write("")
+    st.write("")
 
-    # Upload section header with smaller font
+    # Upload section header with smaller font, close to uploader
     st.markdown(
-        '<p style="font-size:14px; font-weight:normal;">📝 Input Patient Data Manually or Upload a File</p>',
+        '<p style="font-size:14px; font-weight:normal; margin-bottom: 4px;">📝 Input Patient Data Manually or Upload a File</p>',
         unsafe_allow_html=True,
     )
     uploaded_file = st.file_uploader("", type=["csv", "txt"], help="Upload CSV or TXT file")
 
-    # If file uploaded, read and override inputs with first row data
     if uploaded_file is not None:
         try:
             if uploaded_file.name.endswith(".csv"):
                 df = pd.read_csv(uploaded_file)
             else:
-                df = pd.read_csv(uploaded_file, delimiter="\t")  # assume tab-delimited if txt
+                df = pd.read_csv(uploaded_file, delimiter="\t")
             if not df.empty:
-                # Override inputs with first row values (if present)
                 age = int(df.iloc[0].get("age", age))
                 sphere = float(df.iloc[0].get("sphere", sphere))
                 cylinder = float(df.iloc[0].get("cylinder", cylinder))
@@ -52,30 +53,61 @@ def app():
         except Exception as e:
             st.error(f"Error reading uploaded file: {e}")
 
-    st.markdown("")  # small space before button
+    # Small space before button
+    st.write("")
+    st.write("")
 
-    # Larger Analyze and Recommend button
-    if st.button("Analyze and Recommend", use_container_width=True):
-        # Calculate postop K
+    # Custom large, obvious button using markdown + JS click
+    button_clicked = st.button("Analyze and Recommend", key="hidden_button", help="Click to analyze")
+
+    # Use custom styled button (bigger font, padding)
+    # We simulate a bigger button via markdown + JS
+    st.markdown(
+        """
+        <style>
+        .big-button {
+            background-color:#4CAF50;
+            border:none;
+            color:white;
+            padding:15px 0;
+            text-align:center;
+            text-decoration:none;
+            display:block;
+            font-size:22px;
+            font-weight:bold;
+            margin: auto;
+            width: 100%;
+            cursor: pointer;
+            border-radius: 8px;
+            user-select: none;
+        }
+        .big-button:hover {
+            background-color:#45a049;
+        }
+        </style>
+        <div class="big-button" onclick="document.querySelector('button[kind=primary]').click();">
+            Analyze and Recommend
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    # Only proceed if either button is clicked (hidden or styled div triggers hidden button)
+    if button_clicked:
         k1_post, k2_post = calculate_postop_k(k1, k2, sphere, cylinder)
         k_avg_post = round((k1_post + k2_post) / 2, 2)
 
-        # Calculate postop pachymetry and ablation depth
         pachy_post, ablation_depth = calculate_postop_pachymetry(pachy, sphere, cylinder, optical_zone)
 
-        # Calculate postop BCVA
         bcva_post = calculate_postop_bcva(bcva, sphere)
 
-        # Determine surgery recommendation
         recommendation = determine_surgery(sphere, cylinder, pachy, pachy_post, k_avg_post, age)
 
-        # Check warnings
         warnings = check_warnings(k_avg_post, pachy, pachy_post, sphere, bcva_post, cylinder)
-        # Add postop k_avg warning
+
         if k_avg_post < 36 or k_avg_post > 49:
             warnings.append("Warning: Post-op K average out of range (36-49 D)")
 
-        # Display results
         st.subheader("Results:")
         st.markdown(f"- **Post-op K1:** {k1_post} D")
         st.markdown(f"- **Post-op K2:** {k2_post} D")
@@ -89,6 +121,7 @@ def app():
             st.warning("Warnings:")
             for w in warnings:
                 st.write(f"- {w}")
+
 
 if __name__ == "__main__":
     app()

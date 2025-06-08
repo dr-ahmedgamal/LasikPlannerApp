@@ -39,7 +39,7 @@ with col7:
 with col8:
     optical_zone = st.number_input("Optical Zone (mm)", step=0.1, value=6.5)
 
-# --- Space before Upload Section ---
+# --- Spacing before upload ---
 st.markdown("")
 
 # --- Upload Section ---
@@ -59,20 +59,14 @@ if uploaded_file:
         pachy_pre = row.get("pachymetry", pachy_pre)
         optical_zone = row.get("optical_zone", optical_zone)
 
-# --- Centered "Refractive Plan" Button ---
-st.markdown(
-    """
-    <div style='display: flex; justify-content: center; margin-top: 20px;'>
-        <form action='#' method='post'>
-            <button style='background-color: #1f77b4; color: white; font-size: 20px; padding: 12px 30px; border: none; border-radius: 5px; cursor: pointer;' type='submit'>Refractive Plan</button>
-        </form>
-    </div>
-    """,
-    unsafe_allow_html=True
-)
+# --- Centered and Enlarged Button ---
+st.markdown("<br>", unsafe_allow_html=True)
+centered_button = st.columns([1, 2, 1])[1]
+with centered_button:
+    clicked = st.button("🧠 Refractive Plan", use_container_width=True)
 
-# Process after button pressed
-if st.session_state.get("Refractive Plan clicked") or st.button("Hidden Trigger", key="hidden_trigger", help="", disabled=True, label_visibility="collapsed"):
+# --- Results Section ---
+if clicked:
     k1_post, k2_post = calculate_postop_k(k1_pre, k2_pre, sphere, cylinder)
     k_avg_post = round((k1_post + k2_post) / 2, 2)
     pachy_post, ablation_depth = calculate_postop_pachymetry(pachy_pre, sphere, cylinder, optical_zone)

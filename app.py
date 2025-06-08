@@ -39,8 +39,8 @@ with col7:
 with col8:
     optical_zone = st.number_input("Optical Zone (mm)", step=0.1, value=6.5)
 
-# --- Spacing before upload ---
-st.markdown("")
+# --- Spacer between input and upload ---
+st.markdown("<br>", unsafe_allow_html=True)
 
 # --- Upload Section ---
 st.markdown("<p style='font-size: 16px;'>Upload Patient Data (optional)</p>", unsafe_allow_html=True)
@@ -59,11 +59,32 @@ if uploaded_file:
         pachy_pre = row.get("pachymetry", pachy_pre)
         optical_zone = row.get("optical_zone", optical_zone)
 
-# --- Centered and Enlarged Button ---
-st.markdown("<br>", unsafe_allow_html=True)
-centered_button = st.columns([1, 2, 1])[1]
-with centered_button:
-    clicked = st.button("🧠 Refractive Plan", use_container_width=True)
+# --- Extra spacing before button ---
+st.markdown("<br><br>", unsafe_allow_html=True)
+
+# --- Very Large Centered Button ---
+button_container = st.columns([1, 2, 1])[1]
+with button_container:
+    clicked = st.button(
+        "🧠 Refractive Plan",
+        use_container_width=True,
+        key="refractive_plan",
+    )
+    st.markdown(
+        """
+        <style>
+            div[data-testid="stButton"] button {
+                font-size: 22px !important;
+                height: 60px !important;
+                font-weight: bold;
+                background-color: #007BFF;
+                color: white;
+                border-radius: 8px;
+            }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
 
 # --- Results Section ---
 if clicked:

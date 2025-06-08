@@ -9,10 +9,10 @@ from logic import (
     check_warnings,
 )
 
-st.set_page_config(page_title="Refractive Surgerical Planner", layout="centered")
+st.set_page_config(page_title="Refractive Surgical Planner", layout="centered")
 
 st.markdown(
-    "<h2 style='color:#1f77b4;'>Refractive Surgerical Planner</h2>",
+    "<h2 style='color:#1f77b4;'>Refractive Surgical Planner</h2>",
     unsafe_allow_html=True,
 )
 

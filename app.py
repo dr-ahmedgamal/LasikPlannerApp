@@ -11,7 +11,7 @@ from logic import (
 
 st.set_page_config(page_title="Refractive Surgery Planner", layout="centered")
 
-st.title("Refractive Surgery Planner")
+st.title("🔍 Refractive Surgery Planner")
 
 st.markdown("### Input Patient Data")
 
@@ -36,35 +36,7 @@ with col7:
 with col8:
     optical_zone = st.number_input("Optical Zone (mm)", min_value=5.0, max_value=7.0, value=6.5, step=0.1)
 
-# Spacer (divider) between input and upload
-st.markdown("---")
-
-# Upload section header close to upload button
-st.markdown(
-    '<p style="font-size:16px; font-weight:normal; margin-bottom:0.2rem;">Upload Patient Data (optional)</p>', 
-    unsafe_allow_html=True
-)
-uploaded_file = st.file_uploader("", type=["csv", "txt"])
-
-# CSV or TXT processing
-if uploaded_file is not None:
-    try:
-        df = pd.read_csv(uploaded_file)
-    except:
-        df = pd.read_csv(uploaded_file, delimiter="\t")
-
-    if not df.empty:
-        record = df.iloc[0]
-        age = int(record.get("Age", age))
-        sphere = float(record.get("Sphere", sphere))
-        cylinder = float(record.get("Cylinder", cylinder))
-        bcva = float(record.get("BCVA", bcva))
-        k1 = float(record.get("K1", k1))
-        k2 = float(record.get("K2", k2))
-        pachy = float(record.get("Pachymetry", pachy))
-        optical_zone = float(record.get("OpticalZone", optical_zone))
-
-# Removed divider here (no st.markdown("---"))
+# No divider or upload section here
 
 # CSS to style and center the button with larger size and lighter gray border
 st.markdown("""

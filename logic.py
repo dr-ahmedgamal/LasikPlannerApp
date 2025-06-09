@@ -126,7 +126,7 @@ def run_full_analysis(sphere, cylinder, optical_zone, preop_pachy, K1_pre, K2_pr
         (sphere <= -10 or preop_pachy < 500)
     )
 
-    recommendations = []
+ recommendations = []
 
     if lasik_eligible:
         recommendations.append("LASIK")
@@ -137,16 +137,15 @@ def run_full_analysis(sphere, cylinder, optical_zone, preop_pachy, K1_pre, K2_pr
     if pseudophakic_iol_eligible:
         recommendations.append("Pseudophakic IOL")
 
-    # Combined recommendation logic with LASIK prioritized
+    # Sort so LASIK is always first if present
     if "LASIK" in recommendations:
-        # Combine LASIK with others if applicable
-        combined = ["LASIK"] + [r for r in recommendations if r != "LASIK"]
-        results["Recommendation"] = combined if len(combined) > 1 else "LASIK"
+        recommendations = ["LASIK"] + [r for r in recommendations if r != "LASIK"]
+
+    if len(recommendations) > 1:
+        results["Recommendation"] = recommendations
+    elif len(recommendations) == 1:
+        results["Recommendation"] = recommendations[0]
     else:
-        # No LASIK, just list whatever is eligible
-        if recommendations:
-            results["Recommendation"] = recommendations if len(recommendations) > 1 else recommendations[0]
-        else:
-            results["Recommendation"] = "No suitable surgical option based on input data."
+        results["Recommendation"] = "No suitable surgical option based on input data."
 
     return results

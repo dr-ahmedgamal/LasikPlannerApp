@@ -45,9 +45,9 @@ with col8:
 # Spacer
 st.markdown("")
 
-# Upload section (simplified)
-st.markdown("<p style='margin-bottom: 2px;'>Upload Patient Data (optional)</p>", unsafe_allow_html=True)
-uploaded_file = st.file_uploader("", type=["csv", "txt"])
+# Upload section
+st.markdown("##### Upload Patient Data (optional)")
+uploaded_file = st.file_uploader("Choose a CSV or TXT file", type=["csv", "txt"])
 
 # Load uploaded file if provided
 if uploaded_file is not None:
@@ -67,19 +67,16 @@ if uploaded_file is not None:
     except Exception as e:
         st.error(f"Error loading file: {e}")
 
-# Spacer
+# Calculate button
 st.markdown("")
-
-# Enlarge and style the button
 button_style = """
     <style>
     div.stButton > button:first-child {
         background-color: #2c6e91;
         color: white;
-        font-size: 22px;
-        font-weight: bold;
-        padding: 0.8em 2.5em;
-        border-radius: 10px;
+        font-size: 18px;
+        padding: 0.6em 1.8em;
+        border-radius: 8px;
     }
     </style>
 """

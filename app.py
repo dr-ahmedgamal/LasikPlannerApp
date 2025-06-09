@@ -61,8 +61,8 @@ if uploaded_file is not None:
         pachy = float(record.get("Pachymetry", pachy))
         optical_zone = float(record.get("OpticalZone", optical_zone))
 
-# Add vertical space before the button
-st.write("")  # This adds a single blank line as vertical space
+# Add a horizontal divider before the button for spacing
+st.markdown("---")
 
 # Single centered button for analysis
 if st.button("Refractive Plan"):

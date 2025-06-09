@@ -1,3 +1,4 @@
+
 import streamlit as st
 import pandas as pd
 from logic import (
@@ -6,120 +7,96 @@ from logic import (
     calculate_postop_pachymetry,
     calculate_postop_bcva,
     determine_surgery,
-    check_warnings,
+    check_warnings
 )
 
-def process_case(age, sphere, cylinder, bcva, k1, k2, pachy, optical_zone):
-    k1_post, k2_post = calculate_postop_k(k1, k2, sphere, cylinder)
-    k_avg_post = round((k1_post + k2_post) / 2, 2)
-    k_avg_pre = round((k1 + k2) / 2, 2)
-    
-    ablation_depth = calculate_ablation_depth(sphere, cylinder, optical_zone)
-    pachy_post, _ = calculate_postop_pachymetry(pachy, sphere, cylinder, optical_zone)
-    bcva_post = calculate_postop_bcva(bcva, sphere)
-    
-    recommended_surgery = determine_surgery(sphere, cylinder, pachy, pachy_post, k_avg_post, age, ablation_depth)
-    warnings = check_warnings(k_avg_pre, pachy, pachy_post, sphere, bcva_post, cylinder)
-    
-    return {
-        "Post-op K1": k1_post,
-        "Post-op K2": k2_post,
-        "Post-op K avg": k_avg_post,
-        "Ablation Depth (µm)": ablation_depth,
-        "Post-op Pachymetry (µm)": pachy_post,
-        "Post-op BCVA": bcva_post,
-        "Recommendation": recommended_surgery,
-        "Warnings": warnings
-    }
+st.set_page_config(page_title="Refractive Surgery Planner", layout="centered")
 
-def main():
-    st.title("LASIK Outcome Predictor & Refractive Surgery Recommender")
+st.title("🔍 Refractive Surgery Planner")
 
-    st.markdown("### 🔧 Manual Input")
+st.markdown("### Input Patient Data")
 
-    col1, col2, col3, col4 = st.columns(4)
-    with col1:
-        age = st.number_input("Age (years)", min_value=10, max_value=100, value=18)
-    with col2:
-        sphere = st.number_input("Sphere (D)", value=0.00, step=0.25)
-    with col3:
-        cylinder = st.number_input("Cylinder (D)", value=0.00, step=0.25)
-    with col4:
-        bcva = st.number_input("BCVA (Decimal)", value=1.0, min_value=0.0, max_value=2.0, step=0.1)
+col1, col2, col3, col4 = st.columns(4)
 
-    col5, col6, col7, col8 = st.columns(4)
-    with col5:
-        k1 = st.number_input("K1 (D)", value=43.0, step=0.1)
-    with col6:
-        k2 = st.number_input("K2 (D)", value=44.0, step=0.1)
-    with col7:
-        pachy = st.number_input("Pachymetry (µm)", value=520)
-    with col8:
-        optical_zone = st.number_input("Optical Zone (mm)", min_value=5.0, max_value=8.0, value=6.5, step=0.1)
+with col1:
+    age = st.number_input("Age", min_value=18, max_value=100, value=18, step=1)
+with col2:
+    sphere = st.number_input("Sphere", value=0.00, step=0.25)
+with col3:
+    cylinder = st.number_input("Cylinder", value=0.00, step=0.25)
+with col4:
+    bcva = st.number_input("BCVA", min_value=0.0, max_value=2.0, value=1.0, step=0.1)
 
-    st.markdown("---")
-    st.markdown(
-        "<p style='font-size: 0.9rem;'>📝 Optional: Upload CSV to Auto-Fill (overrides manual fields)</p>",
-        unsafe_allow_html=True
-    )
-    uploaded_file = st.file_uploader("Upload CSV file (columns: age, sphere, cylinder, bcva, k1, k2, pachy, optical_zone)", type=["csv"])
+col5, col6, col7, col8 = st.columns(4)
+with col5:
+    k1 = st.number_input("K1", value=43.0, step=0.1)
+with col6:
+    k2 = st.number_input("K2", value=44.0, step=0.1)
+with col7:
+    pachy = st.number_input("Pachymetry", min_value=300, max_value=700, value=520, step=1)
+with col8:
+    optical_zone = st.number_input("Optical Zone (mm)", min_value=5.0, max_value=7.0, value=6.5, step=0.1)
 
-    if uploaded_file:
+# Spacer between input and upload
+st.markdown("---")
+
+# Upload section
+st.markdown('<p style="font-size: 16px; font-weight: normal; margin-bottom: 0.2rem;">Upload Patient Data (optional)</p>', unsafe_allow_html=True)
+uploaded_file = st.file_uploader("", type=["csv", "txt"])
+
+# CSV or TXT processing
+if uploaded_file is not None:
+    try:
         df = pd.read_csv(uploaded_file)
-        st.success("CSV uploaded successfully. Showing predictions below:")
+    except:
+        df = pd.read_csv(uploaded_file, delimiter="\t")
 
-        results = []
-        for _, row in df.iterrows():
-            result = process_case(
-                age=row["age"],
-                sphere=row["sphere"],
-                cylinder=row["cylinder"],
-                bcva=row["bcva"],
-                k1=row["k1"],
-                k2=row["k2"],
-                pachy=row["pachy"],
-                optical_zone=row["optical_zone"]
-            )
-            results.append(result)
+    if not df.empty:
+        record = df.iloc[0]
+        age = int(record.get("Age", age))
+        sphere = float(record.get("Sphere", sphere))
+        cylinder = float(record.get("Cylinder", cylinder))
+        bcva = float(record.get("BCVA", bcva))
+        k1 = float(record.get("K1", k1))
+        k2 = float(record.get("K2", k2))
+        pachy = float(record.get("Pachymetry", pachy))
+        optical_zone = float(record.get("OpticalZone", optical_zone))
 
-        result_df = pd.DataFrame(results)
-        st.dataframe(result_df)
+# Centered and styled large button
+centered_button = """
+<div style=\"display: flex; justify-content: center; margin-top: 30px;\">
+    <button onclick=\"document.getElementById('run-analysis').click()\" 
+    style=\"background-color: #2b6cb0; color: white; padding: 20px 40px; font-size: 22px; font-weight: bold; border: none; border-radius: 10px; cursor: pointer;\">
+        Refractive Plan
+    </button>
+</div>
+<form action=\"\" method=\"post\" style=\"display: none;\">
+    <input type=\"submit\" id=\"run-analysis\" name=\"analyze\" />
+</form>
+"""
 
-    st.markdown("---")
+st.markdown(centered_button, unsafe_allow_html=True)
 
-    # Enlarge the button
-    st.markdown(
-        """
-        <style>
-        div.stButton > button {
-            font-size: 18px;
-            padding: 0.5em 1.5em;
-        }
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
+if "analyze" in st.session_state or st.button("Refractive Plan", key="hidden_button", help="Click the button above"):
+    k1_post, k2_post = calculate_postop_k(k1, k2, sphere, cylinder)
+    k_avg_pre = (k1 + k2) / 2
+    k_avg_post = (k1_post + k2_post) / 2
+    pachy_post, ablation_depth = calculate_postop_pachymetry(pachy, sphere, cylinder, optical_zone)
+    bcva_post = calculate_postop_bcva(bcva, sphere)
 
-    if st.button("🔍 Analyze and Recommend Surgery"):
-        result = process_case(age, sphere, cylinder, bcva, k1, k2, pachy, optical_zone)
+    surgery = determine_surgery(sphere, cylinder, pachy, pachy_post, k_avg_post, ablation_depth, age)
+    warnings = check_warnings(k_avg_pre, pachy, pachy_post, sphere, bcva_post, cylinder)
 
-        st.markdown("### ✅ Postoperative Calculations")
-        st.write(f"**Post-op K1:** {result['Post-op K1']} D")
-        st.write(f"**Post-op K2:** {result['Post-op K2']} D")
-        st.write(f"**Post-op K average:** {result['Post-op K avg']} D")
-        st.write(f"**Ablation Depth:** {result['Ablation Depth (µm)']} µm")
-        st.write(f"**Post-op Pachymetry:** {result['Post-op Pachymetry (µm)']} µm")
-        st.write(f"**Post-op BCVA:** {result['Post-op BCVA']}")
+    st.markdown("### 🔬 Results")
+    st.write(f"**Post-op K1:** {k1_post} D")
+    st.write(f"**Post-op K2:** {k2_post} D")
+    st.write(f"**Post-op Kavg:** {round(k_avg_post,2)} D")
+    st.write(f"**Ablation Depth:** {ablation_depth} µm")
+    st.write(f"**Post-op Pachymetry:** {pachy_post} µm")
+    st.write(f"**Post-op BCVA:** {bcva_post}")
+    st.markdown(f"### 🏥 Recommended Surgery: **{surgery}**")
 
-        st.markdown("### 📌 Surgical Recommendation")
-        st.success(f"**{result['Recommendation']}**")
-
-        if result["Warnings"]:
-            st.markdown("### ⚠️ Warnings")
-            for warning in result["Warnings"]:
-                st.warning(warning)
-        else:
-            st.success("No warnings detected.")
-
-if __name__ == "__main__":
-    main()
+    if warnings:
+        st.markdown("### ⚠️ Warnings")
+        for warning in warnings:
+            st.warning(warning)

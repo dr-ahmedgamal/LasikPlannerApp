@@ -60,7 +60,7 @@ def calculate_postop_K(K1_pre, K2_pre, sphere, cylinder):
     return round(K1_post, 2), round(K2_post, 2)
 
 
-def run_full_analysis(sphere, cylinder, optical_zone, preop_pachy, K1_pre, K2_pre, Kmax, bcva, age):
+def run_full_analysis(sphere, cylinder, optical_zone, preop_pachy, K1_pre, K2_pre, bcva, age):
     """
     Main analysis function returning results dictionary including alerts and recommendations.
     """
@@ -81,8 +81,8 @@ def run_full_analysis(sphere, cylinder, optical_zone, preop_pachy, K1_pre, K2_pr
     alerts = []
 
     # Alerts & Warnings
-    if Kmax > 49 and preop_pachy < 500:
-        alerts.append("Keratoconus risk: Kmax > 49 D and pachymetry < 500 µm")
+    if  K2_pre > 49 and preop_pachy < 500:
+        alerts.append("Keratoconus risk:  K2_pre > 49 D and pachymetry < 500 µm")
 
     if postop_pachy < 410:
         alerts.append("Ectasia risk: postoperative pachymetry < 410 µm")

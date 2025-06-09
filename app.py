@@ -79,7 +79,7 @@ if st.button("Refractive Plan"):
     st.write(f"**Ablation Depth:** {results['Ablation Depth (µm)']} µm")
     st.write(f"**Postoperative Pachymetry:** {results['Post-op Pachymetry (µm)']} µm")
     st.write(f"**Postoperative Average K:** {results['Post-op Kavg']} D")
-    st.write(f"**Predicted Postoperative UCVA:** {results.get('Predicted Post-op UCVA', 'N/A')}")
+    st.write(f"**Predicted Post-op UAVA:** {results.get('Predicted Post-op UAVA', 'N/A')}")
 
     if results["Alerts"]:
         st.warning("⚠️ **Alerts & Warnings:**")

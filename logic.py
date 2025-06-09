@@ -20,7 +20,7 @@ def calculate_postop_pachymetry(preop_pachy, ablation_depth, sphere):
     For myopia (sphere < 0), subtract ablation depth.
     For hyperopia (sphere > 0), subtract fixed 6 µm.
     """
-    if sphere < 0:
+    if sphere <= 0:
         postop = preop_pachy - ablation_depth
     else:
         postop = preop_pachy - 6
@@ -35,7 +35,7 @@ def calculate_delta_K(sphere, cylinder):
     abs_sphere = abs(sphere)
     abs_cyl = abs(cylinder)
 
-    if sphere < 0:
+    if sphere <= 0:
         delta_K1 = abs_sphere * 0.8
         delta_K2 = (abs_sphere + abs_cyl) * 0.8
     else:
@@ -50,7 +50,7 @@ def calculate_delta_K(sphere, cylinder):
 def calculate_postop_K(K1_pre, K2_pre, sphere, cylinder):
     delta_K1, delta_K2 = calculate_delta_K(sphere, cylinder)
 
-    if sphere < 0:
+    if sphere <= 0:
         K1_post = K1_pre - delta_K1
         K2_post = K2_pre - delta_K2
     else:
@@ -107,7 +107,7 @@ def run_full_analysis(sphere, cylinder, optical_zone, preop_pachy, K1_pre, K2_pr
     if  K2_pre > 49 and preop_pachy < 500:
         alerts.append("Keratoconus risk:  K2_pre > 49 D and pachymetry < 500 µm")
 
-    if postop_pachy < 410:
+    if postop_pachy < 400:
         alerts.append("Ectasia risk: postoperative pachymetry < 410 µm")
 
     if sphere > 6:

@@ -1,150 +1,85 @@
-def calculate_postop_k(k1_pre, k2_pre, sphere, cylinder):
-    """
-    Calculate post-op K1 and K2 using latest formulas.
 
-    Myopia:
-        ΔK1 = |Sphere| × 0.8
-        ΔK2 = (|Sphere| + |Cylinder|) × 0.8
-        Post-op = Pre-op - ΔK
+# logic.py
 
-    Hyperopia:
-        ΔK1 = |Sphere| × 1.2
-        ΔK2 = (|Sphere| - |Cylinder|) × 1.2
-        Post-op = Pre-op + ΔK
-    """
-    abs_sphere = abs(sphere)
-    abs_cylinder = abs(cylinder)
+def evaluate_eligibility(data):
+    age = data.get("age")
+    se = data.get("SE")
+    preop_pachy = data.get("preop_pachymetry")
+    postop_pachy = data.get("postop_pachymetry")
+    postop_kavg = data.get("postop_kavg")
+    ablation_depth = data.get("ablation_depth")
+    bcva = data.get("BCVA")
 
-    if sphere < 0:  # Myopia
-        delta_k1 = abs_sphere * 0.8
-        delta_k2 = (abs_sphere + abs_cylinder) * 0.8
-        k1_post = k1_pre - delta_k1
-        k2_post = k2_pre - delta_k2
-    else:  # Hyperopia
-        delta_k1 = abs_sphere * 1.2
-        delta_k2 = (abs_sphere - abs_cylinder) * 1.2
-        k1_post = k1_pre + delta_k1
-        k2_post = k2_pre + delta_k2
-
-    return round(k1_post, 2), round(k2_post, 2)
-
-
-def calculate_ablation_depth(sphere, cylinder, optical_zone):
-    """
-    Munnerlyn formula with 1.1 correction factor:
-    Ablation Depth = 1.1 × (Optical Zone² / 3) × (|Sphere| + |Cylinder|)
-    """
-    abs_sphere = abs(sphere)
-    abs_cylinder = abs(cylinder)
-    ablation_depth = 1.1 * ((optical_zone ** 2) / 3) * (abs_sphere + abs_cylinder)
-    return round(ablation_depth, 2)
-
-
-def calculate_postop_pachymetry(pachy_pre, sphere, cylinder, optical_zone):
-    """
-    Post-op pachymetry:
-    - Myopia: subtract ablation depth
-    - Hyperopia: subtract fixed 6 µm
-    """
-    ablation_depth = calculate_ablation_depth(sphere, cylinder, optical_zone)
-    if sphere < 0:  # Myopia
-        pachy_post = pachy_pre - ablation_depth
-    else:  # Hyperopia
-        pachy_post = pachy_pre - 6
-
-    return round(pachy_post, 2), ablation_depth
-
-
-def calculate_postop_bcva(bcva_pre, sphere):
-    """
-    Estimate BCVA:
-    BCVA_post = min(BCVA_pre + |SE| × 0.05, 1.5)
-    """
-    abs_sphere = abs(sphere)
-    bcva_post = bcva_pre + (abs_sphere * 0.05)
-    return round(min(bcva_post, 1.5), 2)
-
-
-def determine_surgery(sphere, cylinder, pachy_pre, pachy_post, k_avg_post, age, ablation_depth):
-    """
-    Revised logic for surgical recommendation:
-    - LASIK and PRK eligibility as primary options
-    - Phakic/Pseudophakic IOL fallback if LASIK/PRK ineligible
-    """
-    se = sphere + (cylinder / 2)
-    abs_se = abs(se)
-    abs_cylinder = abs(cylinder)
-
-    lasik = (
-        pachy_pre >= 500
-        and pachy_post >= 410
-        and (36 <= k_avg_post <= 49)
-        and ablation_depth <= 140
+    lasik_eligible = (
+        preop_pachy >= 500 and
+        postop_pachy >= 410 and
+        34 <= postop_kavg <= 50 and
+        ablation_depth <= 140 and
+        se is not None
     )
 
-    prk = (
-        se < 0
-        and pachy_pre >= 460
-        and pachy_post >= 400
-        and (36 <= k_avg_post <= 49)
-        and ablation_depth <= 90
+    prk_eligible = (
+        se < 0 and
+        preop_pachy >= 460 and
+        postop_pachy >= 400 and
+        34 <= postop_kavg <= 50 and
+        ablation_depth <= 90
     )
 
-    phakic = (
-        not lasik and not prk
-        and se <= -10
-        and age < 40
+    phakic_eligible = (
+        age < 40 and (
+            se <= -10 or se > 6.0 or not (lasik_eligible or prk_eligible)
+        )
     )
 
-    pseudophakic = (
-        not lasik and not prk
-        and se <= -10
-        and age >= 40
+    pseudophakic_eligible = (
+        age >= 40 and (
+            se <= -10 or se > 6.0 or not (lasik_eligible or prk_eligible)
+        )
     )
 
-    # Recommendation logic based on combination
-    if lasik and prk:
-        return "LASIK / PRK"
-    elif lasik and age < 40 and se <= -10:
-        return "LASIK / Phakic IOL"
-    elif lasik and age >= 40 and se <= -10:
-        return "LASIK / Pseudophakic IOL"
-    elif prk and age < 40 and se <= -10:
-        return "PRK / Phakic IOL"
-    elif prk and age >= 40 and se <= -10:
-        return "PRK / Pseudophakic IOL"
-    elif lasik:
-        return "LASIK"
-    elif prk:
-        return "PRK"
-    elif phakic:
-        return "Phakic IOL"
-    elif pseudophakic:
-        return "Pseudophakic IOL"
-    else:
-        return "No suitable surgery recommended"
+    # Determine recommendations
+    recommendation = "No suitable surgery recommended"
 
+    if lasik_eligible and prk_eligible:
+        recommendation = "LASIK / PRK"
+    elif lasik_eligible and (phakic_eligible or pseudophakic_eligible):
+        if age < 40:
+            recommendation = "LASIK / Phakic IOL"
+        else:
+            recommendation = "LASIK / Pseudophakic IOL"
+    elif prk_eligible and (phakic_eligible or pseudophakic_eligible):
+        if age < 40:
+            recommendation = "PRK / Phakic IOL"
+        else:
+            recommendation = "PRK / Pseudophakic IOL"
+    elif lasik_eligible:
+        recommendation = "LASIK"
+    elif prk_eligible:
+        recommendation = "PRK"
+    elif phakic_eligible:
+        recommendation = "Phakic IOL"
+    elif pseudophakic_eligible:
+        recommendation = "Pseudophakic IOL"
 
-def check_warnings(k_avg_pre, pachy_pre, pachy_post, se, bcva_post):
-    """
-    Warn about:
-    - K > 49 D with pachy < 500 µm → keratoconus risk
-    - Post-op pachy < 410 → ectasia risk
-    - SE > -12 D → extreme myopia
-    - SE > +6 D → extreme hyperopia
-    - BCVA < 0.5 → poor vision
-    """
+    # Warnings
     warnings = []
-
-    if k_avg_pre > 49 and pachy_pre < 500:
-        warnings.append("⚠️ Possible keratoconus risk (K > 49 D, pachy < 500 µm)")
-    if pachy_post < 410:
-        warnings.append("⚠️ Post-op pachymetry below 410 µm (ectasia risk)")
+    if postop_kavg > 48 and preop_pachy < 500:
+        warnings.append("⚠️ Risk of keratoconus (Kavg > 48 D and pachymetry < 500 µm)")
+    if postop_pachy < 400:
+        warnings.append("⚠️ Risk of ectasia (Post-op pachymetry < 400 µm)")
     if se < -12:
-        warnings.append("⚠️ Extreme myopia (SE < -12 D)")
+        warnings.append("⚠️ High myopia (SE < –12 D)")
     if se > 6:
-        warnings.append("⚠️ Extreme hyperopia (SE > +6 D)")
-    if bcva_post < 0.5:
-        warnings.append("⚠️ Poor BCVA (< 0.5)")
+        warnings.append("⚠️ High hyperopia (SE > +6 D)")
+    if bcva < 0.5:
+        warnings.append("⚠️ Poor visual acuity (BCVA < 0.5)")
 
-    return warnings
+    return {
+        "recommendation": recommendation,
+        "lasik_eligible": lasik_eligible,
+        "prk_eligible": prk_eligible,
+        "phakic_eligible": phakic_eligible,
+        "pseudophakic_eligible": pseudophakic_eligible,
+        "warnings": warnings
+    }

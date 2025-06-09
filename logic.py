@@ -59,6 +59,24 @@ def calculate_postop_K(K1_pre, K2_pre, sphere, cylinder):
 
     return round(K1_post, 2), round(K2_post, 2)
 
+def predict_postop_uava(bcva, alerts):
+    """
+    Predict uncorrected postoperative VA.
+    Normally ≥ BCVA. Lower only in high-risk cases.
+    """
+    # Start with same as BCVA
+    uava = bcva
+
+    # If there are serious alerts, reduce prediction slightly
+    if any("Ectasia" in alert or "Keratoconus" in alert or "Extreme" in alert for alert in alerts):
+        uava = max(bcva - 0.1, 0.1)  # reduce by 0.1 but never below 0.1
+    elif bcva >= 1.0:
+        uava = min(bcva + 0.1, 1.2)  # increase slightly, max 1.2
+    else:
+        uava = bcva  # keep same
+
+    return round(uava, 2)
+
 
 def run_full_analysis(sphere, cylinder, optical_zone, preop_pachy, K1_pre, K2_pre, bcva, age):
     """
@@ -79,7 +97,8 @@ def run_full_analysis(sphere, cylinder, optical_zone, preop_pachy, K1_pre, K2_pr
     results["Ablation Depth (µm)"] = ablation_depth
     results["Post-op Pachymetry (µm)"] = postop_pachy
     results["Post-op Kavg"] = postop_Kavg
-    results["Predicted Post-op UCVA"] = predicted_postop_ucva
+    results["BCVA"] = bcva
+    results["Predicted Post-op UAVA"] = predict_postop_uava(bcva, alerts)
 
 
     alerts = []

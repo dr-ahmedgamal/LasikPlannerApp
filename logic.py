@@ -126,7 +126,8 @@ def run_full_analysis(sphere, cylinder, optical_zone, preop_pachy, K1_pre, K2_pr
         (sphere <= -10 or preop_pachy < 500)
     )
 
- recommendations = []
+    # === UPDATED RECOMMENDATION SECTION ===
+    recommendations = []
 
     if lasik_eligible:
         recommendations.append("LASIK")
@@ -137,9 +138,14 @@ def run_full_analysis(sphere, cylinder, optical_zone, preop_pachy, K1_pre, K2_pr
     if pseudophakic_iol_eligible:
         recommendations.append("Pseudophakic IOL")
 
-    # Sort so LASIK is always first if present
+    # Ensure LASIK is always first if present
     if "LASIK" in recommendations:
         recommendations = ["LASIK"] + [r for r in recommendations if r != "LASIK"]
+
+    # According to your requirements:
+    # - If multiple options available, show all with LASIK first
+    # - If only one, show it as string
+    # - If none, show no suitable option
 
     if len(recommendations) > 1:
         results["Recommendation"] = recommendations

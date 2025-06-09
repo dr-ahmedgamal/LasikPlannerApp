@@ -94,7 +94,6 @@ def determine_surgery(sphere, cylinder, pachy_pre, pachy_post, k_avg_post, age, 
       - Age ≥ 40
 
     If both LASIK and PRK eligible, recommend "LASIK / PRK" (LASIK first)
-    If SE < -10 D and LASIK is eligible, also offer Phakic or Pseudophakic IOL as secondary option.
     """
     se = sphere + (cylinder / 2)
     abs_cylinder = abs(cylinder)
@@ -117,33 +116,18 @@ def determine_surgery(sphere, cylinder, pachy_pre, pachy_post, k_avg_post, age, 
         and max_ablation_depth <= 90
     )
 
-    phakic_iol_eligible = (
-        (se <= -8 or se >= 7)
-        and age < 40
-    )
-
-    pseudophakic_iol_eligible = (
-        (se <= -8 or se >= 7)
-        and age >= 40
-    )
+    phakic_iol_eligible = (se <= -8 or se >= 7) and age < 40
+    pseudophakic_iol_eligible = (se <= -8 or se >= 7) and age >= 40
 
     options = []
     if lasik_eligible:
         options.append("LASIK")
     if prk_eligible:
         options.append("PRK")
-
-    # If SE < -10 and LASIK is eligible, add Phakic or Pseudophakic IOL as second option
-    if se < -10 and lasik_eligible:
-        if phakic_iol_eligible:
-            options.append("Phakic IOL")
-        elif pseudophakic_iol_eligible:
-            options.append("Pseudophakic IOL")
-    else:
-        if phakic_iol_eligible:
-            options.append("Phakic IOL")
-        if pseudophakic_iol_eligible:
-            options.append("Pseudophakic IOL")
+    if phakic_iol_eligible:
+        options.append("Phakic IOL")
+    if pseudophakic_iol_eligible:
+        options.append("Pseudophakic IOL")
 
     if "LASIK" in options and "PRK" in options:
         return "LASIK / PRK"

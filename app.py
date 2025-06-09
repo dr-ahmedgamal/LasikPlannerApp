@@ -61,29 +61,15 @@ if uploaded_file is not None:
         pachy = float(record.get("Pachymetry", pachy))
         optical_zone = float(record.get("OpticalZone", optical_zone))
 
-# Large button logic using a visible form
-with st.form("run_analysis"):
-    st.markdown(
-        """
-        <div style="display: flex; justify-content: center; margin-top: 30px;">
-            <button type="submit" style="
-                background-color: #2b6cb0;
-                color: white;
-                padding: 20px 50px;
-                font-size: 24px;
-                font-weight: bold;
-                border: none;
-                border-radius: 10px;
-                cursor: pointer;">
-                Refractive Plan
-            </button>
-        </div>
-        """, unsafe_allow_html=True
-    )
-    submitted = st.form_submit_button("")
+# Refractive Plan button
+submit = st.button(
+    "Refractive Plan",
+    key="refractive_plan_button",
+    type="primary",
+    help="Click to analyze and generate the surgical recommendation.",
+)
 
-# Analysis and results
-if submitted:
+if submit:
     k1_post, k2_post = calculate_postop_k(k1, k2, sphere, cylinder)
     k_avg_pre = (k1 + k2) / 2
     k_avg_post = (k1_post + k2_post) / 2
@@ -106,3 +92,19 @@ if submitted:
         st.markdown("### ⚠️ Warnings")
         for warning in warnings:
             st.warning(warning)
+
+# Styling the button via HTML (injecting size and center alignment)
+st.markdown("""
+<style>
+    .stButton > button {
+        display: block;
+        margin: 3rem auto 1rem auto;
+        padding: 20px 60px;
+        font-size: 24px !important;
+        font-weight: bold;
+        background-color: #2b6cb0;
+        color: white;
+        border-radius: 12px;
+    }
+</style>
+""", unsafe_allow_html=True)

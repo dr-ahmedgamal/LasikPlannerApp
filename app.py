@@ -78,7 +78,7 @@ st.markdown("""
         display: block;
         background-color: white;
         color: black;
-        border: 2px solid #555555;  /* Gray border */
+        border: 2px solid #888888;  /* Gray border */
         border-radius: 10px;
         cursor: pointer;
     }

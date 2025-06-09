@@ -36,7 +36,7 @@ with col7:
 with col8:
     optical_zone = st.number_input("Optical Zone (mm)", min_value=5.0, max_value=7.0, value=6.5, step=0.1)
 
-# Spacer
+# Spacer between input and upload section
 st.markdown("---")
 
 # Upload section
@@ -61,27 +61,8 @@ if uploaded_file is not None:
         pachy = float(record.get("Pachymetry", pachy))
         optical_zone = float(record.get("OpticalZone", optical_zone))
 
-# Custom styled large white button (centered)
-with st.form("refractive_form"):
-    st.markdown("""
-        <div style="text-align: center; margin-top: 40px;">
-            <button type="submit" style="
-                background-color: white;
-                color: #2b6cb0;
-                border: 3px solid #2b6cb0;
-                font-size: 24px;
-                font-weight: bold;
-                padding: 20px 60px;
-                border-radius: 12px;
-                cursor: pointer;
-            ">
-                Refractive Plan
-            </button>
-        </div>
-    """, unsafe_allow_html=True)
-    submitted = st.form_submit_button("Refractive Plan", use_container_width=True)
-
-if submitted:
+# Standard Streamlit button only (small, default style)
+if st.button("Refractive Plan"):
     k1_post, k2_post = calculate_postop_k(k1, k2, sphere, cylinder)
     k_avg_pre = (k1 + k2) / 2
     k_avg_post = (k1_post + k2_post) / 2

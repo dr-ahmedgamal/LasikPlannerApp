@@ -31,9 +31,7 @@ with col2:
     K1_pre = st.number_input("Preoperative K1 (D)", min_value=30.0, max_value=60.0, value=43.0, step=0.1,
                              help="Flat keratometry reading")
     K2_pre = st.number_input("Preoperative K2 (D)", min_value=30.0, max_value=60.0, value=44.0, step=0.1,
-                             help="Steep keratometry reading")
-    Kmax = st.number_input("Maximum Keratometry (Kmax, D)", min_value=30.0, max_value=60.0, value=45.0, step=0.1,
-                           help="Maximum keratometry reading (important for ectasia risk)")
+                             help="Steep keratometry reading (important for ectasia risk)")
 
 age = st.number_input("Patient Age (years)", min_value=10, max_value=100, value=28,
                       help="Age of patient to determine lens implant suitability")
@@ -50,7 +48,6 @@ if st.button("Calculate Recommendation"):
             preop_pachy=preop_pachy,
             K1_pre=K1_pre,
             K2_pre=K2_pre,
-            Kmax=Kmax,
             bcva=bcva,
             age=age
         )

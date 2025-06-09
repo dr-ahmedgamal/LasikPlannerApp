@@ -1,85 +1,104 @@
+def calculate_postop_k(k1_pre, k2_pre, sphere, cylinder):
+    k1_post = round(k1_pre - sphere, 2)
+    k2_post = round(k2_pre - (sphere + cylinder), 2)
+    return k1_post, k2_post
 
-# logic.py
 
-def evaluate_eligibility(data):
-    age = data.get("age")
-    se = data.get("SE")
-    preop_pachy = data.get("preop_pachymetry")
-    postop_pachy = data.get("postop_pachymetry")
-    postop_kavg = data.get("postop_kavg")
-    ablation_depth = data.get("ablation_depth")
-    bcva = data.get("BCVA")
+def calculate_ablation_depth(sphere, cylinder, optical_zone):
+    se = sphere + (cylinder / 2)
+    ablation = abs(se) * (optical_zone ** 2) / 3
+    ablation *= 1.1  # Apply Munnerlyn correction factor
+    return round(ablation, 2)
 
+
+def calculate_postop_pachymetry(pachy_pre, sphere, cylinder, optical_zone):
+    ablation_depth = calculate_ablation_depth(sphere, cylinder, optical_zone)
+
+    if sphere >= 0:
+        # For hyperopia, post-op pachy is pre-op minus fixed 6 µm
+        pachy_post = pachy_pre - 6
+    else:
+        # For myopia/astigmatism, subtract ablation depth
+        pachy_post = pachy_pre - ablation_depth
+
+    return round(pachy_post, 2), ablation_depth
+
+
+def calculate_postop_bcva(bcva_pre, sphere):
+    se = abs(sphere)
+    if se > 10:
+        return round(max(bcva_pre - 0.2, 0.0), 2)
+    return round(bcva_pre, 2)
+
+
+def determine_surgery(sphere, cylinder, pachy_pre, pachy_post, k_avg_post, age):
+    se = sphere + (cylinder / 2)
+    ablation_depth = calculate_ablation_depth(sphere, cylinder, 6.5)  # using default 6.5 mm for decision
+
+    # LASIK eligibility criteria
     lasik_eligible = (
-        preop_pachy >= 500 and
-        postop_pachy >= 410 and
-        34 <= postop_kavg <= 50 and
-        ablation_depth <= 140 and
-        se is not None
+        pachy_pre >= 500 and
+        pachy_post >= 410 and
+        36 <= k_avg_post <= 49 and
+        ablation_depth <= 140
     )
 
+    # PRK eligibility criteria
     prk_eligible = (
         se < 0 and
-        preop_pachy >= 460 and
-        postop_pachy >= 400 and
-        34 <= postop_kavg <= 50 and
+        pachy_pre > 460 and
+        pachy_post >= 400 and
+        36 <= k_avg_post <= 49 and
         ablation_depth <= 90
     )
 
-    phakic_eligible = (
-        age < 40 and (
-            se <= -10 or se > 6.0 or not (lasik_eligible or prk_eligible)
-        )
+    # Phakic or Pseudophakic IOL eligibility
+    iol_eligible = (
+        se <= -8 or se >= +7 or
+        not lasik_eligible and not prk_eligible
     )
 
-    pseudophakic_eligible = (
-        age >= 40 and (
-            se <= -10 or se > 6.0 or not (lasik_eligible or prk_eligible)
-        )
-    )
+    if iol_eligible:
+        if age < 40:
+            iol_type = "Phakic IOL"
+        else:
+            iol_type = "Pseudophakic IOL"
+    else:
+        iol_type = None
 
-    # Determine recommendations
-    recommendation = "No suitable surgery recommended"
-
+    # Decision logic
     if lasik_eligible and prk_eligible:
-        recommendation = "LASIK / PRK"
-    elif lasik_eligible and (phakic_eligible or pseudophakic_eligible):
-        if age < 40:
-            recommendation = "LASIK / Phakic IOL"
-        else:
-            recommendation = "LASIK / Pseudophakic IOL"
-    elif prk_eligible and (phakic_eligible or pseudophakic_eligible):
-        if age < 40:
-            recommendation = "PRK / Phakic IOL"
-        else:
-            recommendation = "PRK / Pseudophakic IOL"
+        return "LASIK / PRK"
     elif lasik_eligible:
-        recommendation = "LASIK"
+        return f"LASIK" + (f" / {iol_type}" if iol_type else "")
     elif prk_eligible:
-        recommendation = "PRK"
-    elif phakic_eligible:
-        recommendation = "Phakic IOL"
-    elif pseudophakic_eligible:
-        recommendation = "Pseudophakic IOL"
+        return f"PRK" + (f" / {iol_type}" if iol_type else "")
+    elif iol_type:
+        return iol_type
+    else:
+        return "No Suitable Surgical Option"
 
-    # Warnings
+
+def check_warnings(k_avg_pre, pachy_pre, pachy_post, sphere, bcva_post, cylinder):
+    se = sphere + (cylinder / 2)
     warnings = []
-    if postop_kavg > 48 and preop_pachy < 500:
-        warnings.append("⚠️ Risk of keratoconus (Kavg > 48 D and pachymetry < 500 µm)")
-    if postop_pachy < 400:
-        warnings.append("⚠️ Risk of ectasia (Post-op pachymetry < 400 µm)")
-    if se < -12:
-        warnings.append("⚠️ High myopia (SE < –12 D)")
-    if se > 6:
-        warnings.append("⚠️ High hyperopia (SE > +6 D)")
-    if bcva < 0.5:
-        warnings.append("⚠️ Poor visual acuity (BCVA < 0.5)")
 
-    return {
-        "recommendation": recommendation,
-        "lasik_eligible": lasik_eligible,
-        "prk_eligible": prk_eligible,
-        "phakic_eligible": phakic_eligible,
-        "pseudophakic_eligible": pseudophakic_eligible,
-        "warnings": warnings
-    }
+    # Warning: suspicious cornea (thin + steep)
+    if k_avg_pre > 48 and pachy_pre < 500:
+        warnings.append("High risk of keratoconus: steep K and thin cornea (<500 µm)")
+
+    # Warning: ectasia risk
+    if pachy_post < 400:
+        warnings.append("Risk of ectasia: post-op pachymetry < 400 µm")
+
+    # Warning: high myopia or hyperopia
+    if se < -12:
+        warnings.append("Very high myopia: SE < –12 D")
+    if se > 6:
+        warnings.append("Very high hyperopia: SE > +6 D")
+
+    # Warning: visual prognosis
+    if bcva_post < 0.5:
+        warnings.append("Low visual potential: predicted BCVA < 0.5")
+
+    return warnings

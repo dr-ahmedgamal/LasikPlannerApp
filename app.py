@@ -66,19 +66,19 @@ if uploaded_file is not None:
 
 # Removed divider here (no st.markdown("---"))
 
-# CSS to style and center the button
+# CSS to style and center the button with larger size and lighter gray border
 st.markdown("""
     <style>
     div.stButton > button:first-child {
-        width: 250px;
-        height: 60px;
-        font-size: 22px;
+        width: 300px;
+        height: 70px;
+        font-size: 26px;
         font-weight: bold;
         margin: auto;
         display: block;
         background-color: white;
         color: black;
-        border: 2px solid #888888;  /* Gray border */
+        border: 2.5px solid #bbbbbb;  /* lighter gray border */
         border-radius: 10px;
         cursor: pointer;
     }

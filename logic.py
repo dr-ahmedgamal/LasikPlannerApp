@@ -114,19 +114,17 @@ def run_full_analysis(sphere, cylinder, optical_zone, preop_pachy, K1_pre, K2_pr
         34 <= postop_Kavg <= 50
     )
 
-    phakic_iol_eligible = (
+    # UPDATED eligibility conditions as requested
+    phakic_iol_eligible = ( 
         age < 40 and
-        not (lasik_eligible or prk_eligible) and
-        (sphere <= -10 or preop_pachy < 500)
+        (sphere <= -10 or sphere > +6 or preop_pachy < 500) 
     )
 
     pseudophakic_iol_eligible = (
         age >= 40 and
-        not (lasik_eligible or prk_eligible) and
-        (sphere <= -10 or preop_pachy < 500)
+        (sphere <= -10 or sphere > +6 or preop_pachy < 500)
     )
 
-    # === UPDATED RECOMMENDATION SECTION ===
     recommendations = []
 
     if lasik_eligible:
@@ -141,11 +139,6 @@ def run_full_analysis(sphere, cylinder, optical_zone, preop_pachy, K1_pre, K2_pr
     # Ensure LASIK is always first if present
     if "LASIK" in recommendations:
         recommendations = ["LASIK"] + [r for r in recommendations if r != "LASIK"]
-
-    # According to your requirements:
-    # - If multiple options available, show all with LASIK first
-    # - If only one, show it as string
-    # - If none, show no suitable option
 
     if len(recommendations) > 1:
         results["Recommendation"] = recommendations

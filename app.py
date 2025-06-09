@@ -62,7 +62,7 @@ if uploaded_file is not None:
         optical_zone = float(record.get("OpticalZone", optical_zone))
 
 # Add vertical space before the button
-st.markdown("<br>", unsafe_allow_html=True)
+st.write("")  # This adds a single blank line as vertical space
 
 # Single centered button for analysis
 if st.button("Refractive Plan"):

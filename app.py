@@ -115,4 +115,7 @@ if st.button("Refractive Plan"):
     """)
 
 else:
-    st.info("Enter patient data and click 'Calculate Recommendation' to see the results.")
+st.markdown(
+    "<small><i>Enter patient data and click 'Refractive Plan' to see the results.</i></small>",
+    unsafe_allow_html=True
+)

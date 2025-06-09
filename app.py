@@ -39,11 +39,11 @@ with col8:
 # Spacer between input and upload section
 st.markdown("---")
 
-# Upload section
+# Upload section header and uploader (close spacing)
 st.markdown('<p style="font-size: 16px; font-weight: normal; margin-bottom: 0.2rem;">Upload Patient Data (optional)</p>', unsafe_allow_html=True)
 uploaded_file = st.file_uploader("", type=["csv", "txt"])
 
-# CSV or TXT processing
+# Process uploaded file if any
 if uploaded_file is not None:
     try:
         df = pd.read_csv(uploaded_file)
@@ -61,7 +61,10 @@ if uploaded_file is not None:
         pachy = float(record.get("Pachymetry", pachy))
         optical_zone = float(record.get("OpticalZone", optical_zone))
 
-# Standard Streamlit button only (small, default style)
+# Add vertical space before the button
+st.markdown("<br>", unsafe_allow_html=True)
+
+# Single centered button for analysis
 if st.button("Refractive Plan"):
     k1_post, k2_post = calculate_postop_k(k1, k2, sphere, cylinder)
     k_avg_pre = (k1 + k2) / 2

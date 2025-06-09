@@ -1,125 +1,89 @@
+# app.py
+
 import streamlit as st
-import pandas as pd
-from logic import (
-    calculate_postop_k,
-    calculate_ablation_depth,
-    calculate_postop_pachymetry,
-    calculate_postop_bcva,
-    determine_surgery,
-    check_warnings,
-)
+from logic import run_full_analysis
 
-st.set_page_config(page_title="Refractive Surgical Planner", layout="centered")
+st.set_page_config(page_title="LASIK Surgical Recommendation & Calculator", layout="centered")
 
-st.markdown(
-    "<h2 style='color:#1f77b4;'>Refractive Surgical Planner</h2>",
-    unsafe_allow_html=True,
-)
+st.title("🔷 LASIK Surgical Recommendation & Calculation Tool")
+
+st.markdown("""
+This app calculates the recommended refractive surgery based on patient data,
+including corneal measurements and refractive errors, following the latest clinical guidelines.
+""")
 
 # --- Input Section ---
-st.markdown("### Patient Data")
+st.header("Patient Data Input")
 
-col1, col2, col3, col4 = st.columns(4)
+col1, col2 = st.columns(2)
+
 with col1:
-    age = st.number_input("Age", min_value=18, max_value=100, value=18)
+    sphere = st.number_input("Sphere (D)", value=0.0, format="%.2f",
+                             help="Enter spherical refraction in diopters (negative for myopia, positive for hyperopia)")
+    cylinder = st.number_input("Cylinder (D)", value=0.0, format="%.2f",
+                               help="Enter cylindrical refraction in diopters (astigmatism)")
+    optical_zone = st.number_input("Optical Zone (mm)", min_value=5.0, max_value=8.0, value=6.0, step=0.1,
+                                   help="Enter optical zone diameter for ablation calculation")
+
 with col2:
-    sphere = st.number_input("Sphere (D)", step=0.25, value=0.00)
-with col3:
-    cylinder = st.number_input("Cylinder (D)", step=0.25, value=0.00)
-with col4:
-    bcva_pre = st.number_input("BCVA", step=0.1, value=1.0)
+    preop_pachy = st.number_input("Preoperative Pachymetry (µm)", min_value=300, max_value=700, value=540,
+                                  help="Central corneal thickness before surgery")
+    K1_pre = st.number_input("Preoperative K1 (D)", min_value=30.0, max_value=60.0, value=43.0, step=0.01,
+                             help="Flat keratometry reading")
+    K2_pre = st.number_input("Preoperative K2 (D)", min_value=30.0, max_value=60.0, value=44.0, step=0.01,
+                             help="Steep keratometry reading")
+    Kmax = st.number_input("Maximum Keratometry (Kmax, D)", min_value=30.0, max_value=60.0, value=45.0, step=0.01,
+                           help="Maximum keratometry reading (important for ectasia risk)")
 
-col5, col6, col7, col8 = st.columns(4)
-with col5:
-    k1_pre = st.number_input("K1 (D)", step=0.1, value=42.0)
-with col6:
-    k2_pre = st.number_input("K2 (D)", step=0.1, value=43.0)
-with col7:
-    pachy_pre = st.number_input("Pachymetry (µm)", step=1, value=520)
-with col8:
-    optical_zone = st.number_input("Optical Zone (mm)", step=0.1, value=6.5)
+age = st.number_input("Patient Age (years)", min_value=10, max_value=100, value=28,
+                      help="Age of patient to determine lens implant suitability")
+bcva = st.number_input("Best Corrected Visual Acuity (BCVA, decimal)", min_value=0.1, max_value=1.5, value=1.0, step=0.01,
+                       help="Decimal value for BCVA (e.g. 1.0 = 20/20)")
 
-# --- Spacer between input and upload section ---
-st.markdown("<br><br>", unsafe_allow_html=True)
+# --- Run Analysis ---
+if st.button("Calculate Recommendation"):
+    with st.spinner("Calculating..."):
+        results = run_full_analysis(
+            sphere=sphere,
+            cylinder=cylinder,
+            optical_zone=optical_zone,
+            preop_pachy=preop_pachy,
+            K1_pre=K1_pre,
+            K2_pre=K2_pre,
+            Kmax=Kmax,
+            bcva=bcva,
+            age=age
+        )
 
-# --- Upload Section ---
-st.markdown("<p style='font-size: 16px;'>Upload Patient Data (optional)</p>", unsafe_allow_html=True)
-uploaded_file = st.file_uploader("", type=["csv", "txt"])
+    st.subheader("Calculation Results")
 
-if uploaded_file:
-    df = pd.read_csv(uploaded_file)
-    if not df.empty:
-        row = df.iloc[0]
-        age = row.get("age", age)
-        sphere = row.get("sphere", sphere)
-        cylinder = row.get("cylinder", cylinder)
-        bcva_pre = row.get("bcva", bcva_pre)
-        k1_pre = row.get("k1", k1_pre)
-        k2_pre = row.get("k2", k2_pre)
-        pachy_pre = row.get("pachymetry", pachy_pre)
-        optical_zone = row.get("optical_zone", optical_zone)
+    st.write(f"**Spherical Equivalent (SE):** {results['SE']} D")
+    st.write(f"**Ablation Depth:** {results['Ablation Depth (µm)']} µm")
+    st.write(f"**Postoperative Pachymetry:** {results['Post-op Pachymetry (µm)']} µm")
+    st.write(f"**Change in K1 (ΔK1):** {results['Delta K1']} D")
+    st.write(f"**Change in K2 (ΔK2):** {results['Delta K2']} D")
+    st.write(f"**Postoperative K1:** {results['Post-op K1']} D")
+    st.write(f"**Postoperative K2:** {results['Post-op K2']} D")
+    st.write(f"**Postoperative Average K:** {results['Post-op Kavg']} D")
 
-# --- Spacer before button ---
-st.markdown("<br><br>", unsafe_allow_html=True)
+    if results["Alerts"]:
+        st.warning("⚠️ **Alerts & Warnings:**")
+        for alert in results["Alerts"]:
+            st.write(f"- {alert}")
+    else:
+        st.success("✅ No alerts or warnings detected.")
 
-# --- Large Centered Button Container ---
-button_col = st.columns([1, 2, 1])[1]
-with button_col:
-    clicked = st.button("Refractive Plan", key="plan_button")
-
-# --- Inject CSS for Styling the Button ---
-st.markdown("""
-    <style>
-    div[data-testid="stButton"] button {
-        font-size: 28px !important;
-        font-weight: bold !important;
-        padding: 20px 40px !important;
-        background-color: #1f77b4 !important;
-        color: white !important;
-        border-radius: 10px !important;
-        width: 100% !important;
-        text-align: center !important;
-    }
-    </style>
-""", unsafe_allow_html=True)
-
-# --- Results Section ---
-if clicked:
-    # --- Calculations ---
-    k1_post, k2_post = calculate_postop_k(k1_pre, k2_pre, sphere, cylinder)
-    k_avg_post = round((k1_post + k2_post) / 2, 2)
-    pachy_post, ablation_depth = calculate_postop_pachymetry(pachy_pre, sphere, cylinder, optical_zone)
-    bcva_post = calculate_postop_bcva(bcva_pre, sphere)
-
-    # --- Decision Logic ---
-    surgery = determine_surgery(
-        sphere=sphere,
-        cylinder=cylinder,
-        pachy_pre=pachy_pre,
-        pachy_post=pachy_post,
-        k_avg_post=k_avg_post,
-        age=age
-    )
-
-    warnings = check_warnings(
-        k_avg_pre=(k1_pre + k2_pre) / 2,
-        pachy_pre=pachy_pre,
-        pachy_post=pachy_post,
-        sphere=sphere,
-        bcva_post=bcva_post,
-        cylinder=cylinder
-    )
-
-    # --- Display Results ---
     st.markdown("---")
-    st.subheader("🔍 Results")
-    st.write(f"**Post-op K1:** {k1_post} D")
-    st.write(f"**Post-op K2:** {k2_post} D")
-    st.write(f"**Post-op K_avg:** {k_avg_post} D")
-    st.write(f"**Ablation Depth:** {ablation_depth} µm")
-    st.write(f"**Post-op Pachymetry:** {pachy_post} µm")
-    st.write(f"**Post-op BCVA:** {bcva_post}")
-    st.write(f"### ✅ Recommended Procedure: {surgery}")
+    st.header("Surgical Recommendation")
+    st.info(f"**Recommended Procedure:** {results['Recommendation']}")
 
-    if warnings:
-        st.warning("⚠️ " + "\n\n".join(warnings))
+    st.markdown("""
+    ---
+    **Notes:**
+    - Recommendations are based on current clinical guidelines.
+    - Always correlate with clinical examination and patient-specific factors.
+    """)
+
+else:
+    st.info("Enter patient data and click 'Calculate Recommendation' to see the results.")
+

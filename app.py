@@ -40,18 +40,21 @@ bcva = st.number_input("Best Corrected Visual Acuity (BCVA, decimal)", min_value
 
 # --- Run Analysis ---
 # --- Run Analysis Button ---
+
 st.markdown(
     """
     <style>
-    div.stButton > button:first-child {
-        background-color: #0e76a8;
-        color: white;
-        padding: 1.2em 2em;
-        font-size: 1.5em;
-        font-weight: bold;
-        border-radius: 10px;
-        margin: 1em auto;
+    div.stButton > button {
         display: block;
+        margin: 0 auto;
+        height: 3.5em;
+        width: 50%;
+        font-size: 1.3em;
+        font-weight: bold;
+        background-color: white;
+        color: black;
+        border-radius: 8px;
+        border: 2px solid #ccc;
     }
     </style>
     """,

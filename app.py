@@ -70,15 +70,15 @@ if uploaded_file is not None:
 st.markdown("""
     <style>
     div.stButton > button:first-child {
-        width: 300px;
-        height: 70px;
-        font-size: 26px;
+        width: 50%;
+        height: 3.5em;
+        font-size: 1.3em;
         font-weight: bold;
-        margin: auto;
+        margin: 0 auto;
         display: block;
         background-color: white;
         color: black;
-        border: 2.5px solid #bbbbbb;  /* lighter gray border */
+        border: 2px solid #ccc;  /* lighter gray border */
         border-radius: 10px;
         cursor: pointer;
     }

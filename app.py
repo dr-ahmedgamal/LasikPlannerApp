@@ -64,8 +64,7 @@ if uploaded_file is not None:
         pachy = float(record.get("Pachymetry", pachy))
         optical_zone = float(record.get("OpticalZone", optical_zone))
 
-# Add space before the button with a divider
-st.markdown("---")
+# Removed divider here (no st.markdown("---"))
 
 # CSS to style and center the button
 st.markdown("""
@@ -79,7 +78,7 @@ st.markdown("""
         display: block;
         background-color: white;
         color: black;
-        border: 2px solid #2b6cb0;
+        border: 2px solid #555555;  /* Gray border */
         border-radius: 10px;
         cursor: pointer;
     }

@@ -52,6 +52,27 @@ if st.button("Calculate Recommendation"):
             age=age
         )
 
+    # Custom CSS for centered white button
+st.markdown(
+    """
+    <style>
+    div.stButton > button {
+        display: block;
+        margin: 0 auto;
+        height: 3.5em;
+        width: 50%;
+        font-size: 1.3em;
+        font-weight: bold;
+        background-color: white;
+        color: black;
+        border-radius: 8px;
+        border: 2px solid #ccc;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
     st.subheader("Calculation Results")
 
     st.write(f"**Ablation Depth:** {results['Ablation Depth (µm)']} µm")

@@ -11,7 +11,7 @@ from logic import (
 
 st.set_page_config(page_title="Refractive Surgery Planner", layout="centered")
 
-st.title("🔍 Refractive Surgery Planner")
+st.title("Refractive Surgery Planner")
 
 st.markdown("### Input Patient Data")
 

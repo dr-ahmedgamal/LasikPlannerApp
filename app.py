@@ -9,98 +9,103 @@ from logic import (
     check_warnings,
 )
 
-st.set_page_config(page_title="Refractive Surgical Planner", layout="centered")
+st.set_page_config(page_title="Refractive Surgery Planner", layout="centered")
 
 st.markdown(
-    "<h2 style='color:#1f77b4;'>Refractive Surgical Planner</h2>",
+    "<h2 style='text-align: center; color: #2c6e91;'>Refractive Surgery Planning Tool</h2>",
     unsafe_allow_html=True,
 )
 
-# --- Input Section ---
-st.markdown("### Patient Data")
+st.markdown("---")
+
+st.markdown("### 👁️ Enter Patient Data")
 
 col1, col2, col3, col4 = st.columns(4)
+
 with col1:
-    age = st.number_input("Age", min_value=18, max_value=100, value=18)
+    age = st.number_input("Age", value=18)
 with col2:
-    sphere = st.number_input("Sphere (D)", step=0.25, value=0.00)
+    sphere = st.number_input("Sphere (D)", step=0.25, value=0.00, format="%.2f")
 with col3:
-    cylinder = st.number_input("Cylinder (D)", step=0.25, value=0.00)
+    cylinder = st.number_input("Cylinder (D)", step=0.25, value=0.00, format="%.2f")
 with col4:
-    bcva_pre = st.number_input("BCVA", step=0.1, value=1.0)
+    bcva_pre = st.number_input("BCVA", value=1.0, format="%.2f")
 
 col5, col6, col7, col8 = st.columns(4)
+
 with col5:
-    k1_pre = st.number_input("K1 (D)", step=0.1, value=42.0)
+    k1_pre = st.number_input("K1 (D)", step=0.1, value=43.0, format="%.2f")
 with col6:
-    k2_pre = st.number_input("K2 (D)", step=0.1, value=43.0)
+    k2_pre = st.number_input("K2 (D)", step=0.1, value=44.0, format="%.2f")
 with col7:
-    pachy_pre = st.number_input("Pachymetry (µm)", step=1, value=520)
+    pachy_pre = st.number_input("Pachymetry (µm)", value=520)
 with col8:
-    optical_zone = st.number_input("Optical Zone (mm)", step=0.1, value=6.5)
+    optical_zone = st.number_input("Optical Zone (mm)", step=0.1, value=6.5, format="%.2f")
 
-# --- Spacer between input and upload section ---
-st.markdown("<br><br>", unsafe_allow_html=True)
+# Spacer
+st.markdown("")
 
-# --- Upload Section ---
-st.markdown("<p style='font-size: 16px;'>Upload Patient Data (optional)</p>", unsafe_allow_html=True)
+# Upload section (simplified)
+st.markdown("<p style='margin-bottom: 2px;'>Upload Patient Data (optional)</p>", unsafe_allow_html=True)
 uploaded_file = st.file_uploader("", type=["csv", "txt"])
 
-if uploaded_file:
-    df = pd.read_csv(uploaded_file)
-    if not df.empty:
-        row = df.iloc[0]
-        age = row.get("age", age)
-        sphere = row.get("sphere", sphere)
-        cylinder = row.get("cylinder", cylinder)
-        bcva_pre = row.get("bcva", bcva_pre)
-        k1_pre = row.get("k1", k1_pre)
-        k2_pre = row.get("k2", k2_pre)
-        pachy_pre = row.get("pachymetry", pachy_pre)
-        optical_zone = row.get("optical_zone", optical_zone)
+# Load uploaded file if provided
+if uploaded_file is not None:
+    try:
+        df = pd.read_csv(uploaded_file)
+        if not df.empty:
+            row = df.iloc[0]
+            age = row.get("Age", age)
+            sphere = row.get("Sphere", sphere)
+            cylinder = row.get("Cylinder", cylinder)
+            bcva_pre = row.get("BCVA", bcva_pre)
+            k1_pre = row.get("K1", k1_pre)
+            k2_pre = row.get("K2", k2_pre)
+            pachy_pre = row.get("Pachymetry", pachy_pre)
+            optical_zone = row.get("OpticalZone", optical_zone)
+            st.success("Data loaded from uploaded file.")
+    except Exception as e:
+        st.error(f"Error loading file: {e}")
 
-# --- Spacer before button ---
-st.markdown("<br><br>", unsafe_allow_html=True)
+# Spacer
+st.markdown("")
 
-# --- Large Centered Button Container ---
-button_col = st.columns([1, 2, 1])[1]
-with button_col:
-    clicked = st.button("Refractive Plan", key="plan_button")
-
-# --- Inject CSS for Styling the Button ---
-st.markdown("""
+# Enlarge and style the button
+button_style = """
     <style>
-    div[data-testid="stButton"] button {
-        font-size: 28px !important;
-        font-weight: bold !important;
-        padding: 20px 40px !important;
-        background-color: #1f77b4 !important;
-        color: white !important;
-        border-radius: 10px !important;
-        width: 100% !important;
-        text-align: center !important;
+    div.stButton > button:first-child {
+        background-color: #2c6e91;
+        color: white;
+        font-size: 22px;
+        font-weight: bold;
+        padding: 0.8em 2.5em;
+        border-radius: 10px;
     }
     </style>
-""", unsafe_allow_html=True)
+"""
+st.markdown(button_style, unsafe_allow_html=True)
 
-# --- Results Section ---
-if clicked:
+if st.button("Refractive Plan"):
     k1_post, k2_post = calculate_postop_k(k1_pre, k2_pre, sphere, cylinder)
-    k_avg_post = round((k1_post + k2_post) / 2, 2)
+    k_avg_pre = (k1_pre + k2_pre) / 2
+    k_avg_post = (k1_post + k2_post) / 2
+
     pachy_post, ablation_depth = calculate_postop_pachymetry(pachy_pre, sphere, cylinder, optical_zone)
     bcva_post = calculate_postop_bcva(bcva_pre, sphere)
-    surgery = determine_surgery(sphere, cylinder, pachy_pre, pachy_post, k_avg_post, age)
-    warnings = check_warnings((k1_pre + k2_pre) / 2, pachy_pre, pachy_post, sphere, bcva_post, cylinder)
+    recommendation = determine_surgery(sphere, cylinder, pachy_pre, pachy_post, k_avg_post, age)
+    warnings = check_warnings(k_avg_pre, pachy_pre, pachy_post, sphere, bcva_post, cylinder)
 
-    st.markdown("---")
-    st.subheader("🔍 Results")
+    st.markdown("### 🔍 Results")
     st.write(f"**Post-op K1:** {k1_post} D")
     st.write(f"**Post-op K2:** {k2_post} D")
-    st.write(f"**Post-op K_avg:** {k_avg_post} D")
-    st.write(f"**Ablation Depth:** {ablation_depth} µm")
+    st.write(f"**Post-op K Average:** {round(k_avg_post, 2)} D")
     st.write(f"**Post-op Pachymetry:** {pachy_post} µm")
+    st.write(f"**Ablation Depth:** {ablation_depth} µm")
     st.write(f"**Post-op BCVA:** {bcva_post}")
-    st.write(f"### ✅ Recommended Procedure: {surgery}")
+    st.markdown("### ✅ Recommended Procedure")
+    st.success(recommendation)
 
     if warnings:
-        st.warning("⚠️ " + "\n\n".join(warnings))
+        st.markdown("### ⚠️ Warnings")
+        for warn in warnings:
+            st.warning(warn)

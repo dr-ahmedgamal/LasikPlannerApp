@@ -3,9 +3,9 @@
 import streamlit as st
 from logic import run_full_analysis
 
-st.set_page_config(page_title="LASIK Surgical Recommendation & Calculator", layout="centered")
+st.set_page_config(page_title="Refractive Surgery Planner", layout="centered")
 
-st.title("🔷 LASIK Surgical Recommendation & Calculation Tool")
+st.title("Refractive Surgery Planner")
 
 st.markdown("""
 This app calculates the recommended refractive surgery based on patient data,
@@ -39,7 +39,26 @@ bcva = st.number_input("Best Corrected Visual Acuity (BCVA, decimal)", min_value
                        help="Decimal value for BCVA (e.g. 1.0 = 20/20)")
 
 # --- Run Analysis ---
-if st.button("Calculate Recommendation"):
+# --- Run Analysis Button ---
+st.markdown(
+    """
+    <style>
+    div.stButton > button:first-child {
+        background-color: #0e76a8;
+        color: white;
+        padding: 1.2em 2em;
+        font-size: 1.5em;
+        font-weight: bold;
+        border-radius: 10px;
+        margin: 1em auto;
+        display: block;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+if st.button("Refractive Plan"):
     with st.spinner("Calculating..."):
         results = run_full_analysis(
             sphere=sphere,

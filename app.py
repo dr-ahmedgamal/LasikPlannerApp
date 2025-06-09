@@ -93,7 +93,7 @@ if submit:
         for warning in warnings:
             st.warning(warning)
 
-# Styling the button via HTML (injecting size and center alignment)
+# Styling the button via HTML (injecting white color and center alignment)
 st.markdown("""
 <style>
     .stButton > button {
@@ -102,8 +102,9 @@ st.markdown("""
         padding: 20px 60px;
         font-size: 24px !important;
         font-weight: bold;
-        background-color: #2b6cb0;
-        color: white;
+        background-color: white;
+        color: #2b6cb0;
+        border: 3px solid #2b6cb0;
         border-radius: 12px;
     }
 </style>

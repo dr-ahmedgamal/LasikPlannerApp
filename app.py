@@ -115,5 +115,5 @@ if st.button("Refractive Plan"):
     """)
 
 else:
-    st.markdown("*_Enter patient data and click 'Refractive Plan' to see the results._*", help="Instruction")
+    st.markdown("*_Enter patient data and click 'Refractive Plan' to see the results._*")
 

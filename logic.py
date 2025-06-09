@@ -1,4 +1,4 @@
-def calculate_postop_k(k1_pre, k2_pre, sphere, cylinder): 
+def calculate_postop_k(k1_pre, k2_pre, sphere, cylinder):
     """
     Calculate post-op K1 and K2 using your latest formulas.
 
@@ -94,6 +94,7 @@ def determine_surgery(sphere, cylinder, pachy_pre, pachy_post, k_avg_post, age, 
       - Age ≥ 40
 
     If both LASIK and PRK eligible, recommend "LASIK / PRK" (LASIK first)
+    If SE < -10 D and LASIK is eligible, also offer Phakic or Pseudophakic IOL as secondary option.
     """
     se = sphere + (cylinder / 2)
     abs_cylinder = abs(cylinder)
@@ -131,10 +132,18 @@ def determine_surgery(sphere, cylinder, pachy_pre, pachy_post, k_avg_post, age, 
         options.append("LASIK")
     if prk_eligible:
         options.append("PRK")
-    if phakic_iol_eligible:
-        options.append("Phakic IOL")
-    if pseudophakic_iol_eligible:
-        options.append("Pseudophakic IOL")
+
+    # If SE < -10 and LASIK is eligible, add Phakic or Pseudophakic IOL as second option
+    if se < -10 and lasik_eligible:
+        if phakic_iol_eligible:
+            options.append("Phakic IOL")
+        elif pseudophakic_iol_eligible:
+            options.append("Pseudophakic IOL")
+    else:
+        if phakic_iol_eligible:
+            options.append("Phakic IOL")
+        if pseudophakic_iol_eligible:
+            options.append("Pseudophakic IOL")
 
     if "LASIK" in options and "PRK" in options:
         return "LASIK / PRK"
@@ -171,4 +180,3 @@ def check_warnings(k_avg_pre, pachy_pre, pachy_post, sphere, bcva_post, cylinder
         warnings.append("Warning: Post-op K average out of range (36–49 D)")
 
     return warnings
-

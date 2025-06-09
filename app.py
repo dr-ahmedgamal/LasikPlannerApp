@@ -36,14 +36,17 @@ with col7:
 with col8:
     optical_zone = st.number_input("Optical Zone (mm)", min_value=5.0, max_value=7.0, value=6.5, step=0.1)
 
-# Spacer between input and upload section
+# Spacer (divider) between input and upload
 st.markdown("---")
 
-# Upload section header and uploader (close spacing)
-st.markdown('<p style="font-size: 16px; font-weight: normal; margin-bottom: 0.2rem;">Upload Patient Data (optional)</p>', unsafe_allow_html=True)
+# Upload section header close to upload button
+st.markdown(
+    '<p style="font-size:16px; font-weight:normal; margin-bottom:0.2rem;">Upload Patient Data (optional)</p>', 
+    unsafe_allow_html=True
+)
 uploaded_file = st.file_uploader("", type=["csv", "txt"])
 
-# Process uploaded file if any
+# CSV or TXT processing
 if uploaded_file is not None:
     try:
         df = pd.read_csv(uploaded_file)
@@ -61,10 +64,33 @@ if uploaded_file is not None:
         pachy = float(record.get("Pachymetry", pachy))
         optical_zone = float(record.get("OpticalZone", optical_zone))
 
-# Add a horizontal divider before the button for spacing
+# Add space before the button with a divider
 st.markdown("---")
 
-# Single centered button for analysis
+# CSS to style and center the button
+st.markdown("""
+    <style>
+    div.stButton > button:first-child {
+        width: 250px;
+        height: 60px;
+        font-size: 22px;
+        font-weight: bold;
+        margin: auto;
+        display: block;
+        background-color: white;
+        color: black;
+        border: 2px solid #2b6cb0;
+        border-radius: 10px;
+        cursor: pointer;
+    }
+    div.stButton {
+        text-align: center;
+        margin-top: 20px;
+        margin-bottom: 40px;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
 if st.button("Refractive Plan"):
     k1_post, k2_post = calculate_postop_k(k1, k2, sphere, cylinder)
     k_avg_pre = (k1 + k2) / 2

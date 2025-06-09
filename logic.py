@@ -72,11 +72,15 @@ def run_full_analysis(sphere, cylinder, optical_zone, preop_pachy, K1_pre, K2_pr
 
     K1_post, K2_post = calculate_postop_K(K1_pre, K2_pre, sphere, cylinder)
     postop_Kavg = round((K1_post + K2_post) / 2, 2)
+    predicted_postop_ucva = round(bcva - 0.1 * abs(sphere), 2)
+    if predicted_postop_ucva < 0:
+        predicted_postop_ucva = 0  # Prevent negative visual acuity
 
     results["Ablation Depth (µm)"] = ablation_depth
     results["Post-op Pachymetry (µm)"] = postop_pachy
     results["Post-op Kavg"] = postop_Kavg
-    results["BCVA"] = bcva
+    results["Predicted Post-op UCVA"] = predicted_postop_ucva
+
 
     alerts = []
 

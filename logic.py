@@ -76,7 +76,6 @@ def predict_postop_uava(bcva, sphere):
 
     return round(uava, 2)
 
-
 def run_full_analysis(sphere, cylinder, optical_zone, preop_pachy, K1_pre, K2_pre, bcva, age):
     """
     Main analysis function returning results dictionary including alerts and recommendations.
@@ -90,16 +89,17 @@ def run_full_analysis(sphere, cylinder, optical_zone, preop_pachy, K1_pre, K2_pr
     K1_post, K2_post = calculate_postop_K(K1_pre, K2_pre, sphere, cylinder)
     postop_Kavg = round((K1_post + K2_post) / 2, 2)
 
-    Predict postoperative uncorrected VA (Post-op UAVA) based on sphere correction.
-    - If sphere <= 0: Post-op UAVA = BCVA + 0.05 * abs(sphere), capped at 1.2
-    - If sphere > 0: Post-op UAVA = BCVA
+    # Predict postoperative uncorrected VA (Post-op UAVA) based on sphere correction.
+    # - If sphere <= 0: Post-op UAVA = BCVA + 0.05 * abs(sphere), capped at 1.2
+    # - If sphere > 0: Post-op UAVA = BCVA
 
     results["Ablation Depth (µm)"] = ablation_depth
     results["Post-op Pachymetry (µm)"] = postop_pachy
     results["Post-op Kavg"] = postop_Kavg
     results["BCVA"] = bcva
     results["Predicted Post-op UAVA"] = predict_postop_uava(bcva, sphere)
-
+    uava = predict_postop_uava(bcva, sphere)
+    results["Predicted Post-op UAVA"] = uava
 
     alerts = []
 
@@ -116,7 +116,7 @@ def run_full_analysis(sphere, cylinder, optical_zone, preop_pachy, K1_pre, K2_pr
     if sphere < -12:
         alerts.append("Extreme myopia: SE < -12 D")
 
-    if Post-op UAVA < 0.5:
+    if uava < 0.5:
         alerts.append("Low visual potential: BCVA < 0.5")
 
     results["Alerts"] = alerts

@@ -17,7 +17,7 @@ def munnerlyn_formula(sphere, cylinder, optical_zone):
 def calculate_postop_pachymetry(preop_pachy, ablation_depth, sphere):
     """
     Calculate postoperative pachymetry.
-    For myopia (sphere < 0), subtract ablation depth.
+    For myopia (sphere <= 0), subtract ablation depth.
     For hyperopia (sphere > 0), subtract fixed 6 µm.
     """
     if sphere <= 0:
@@ -104,7 +104,7 @@ def run_full_analysis(sphere, cylinder, optical_zone, preop_pachy, K1_pre, K2_pr
     alerts = []
 
     # Alerts & Warnings
-    if  K2_pre > 49 and preop_pachy < 500:
+    if  K2_pre > 48 and preop_pachy < 500:
         alerts.append("Keratoconus risk:  K2_pre > 49 D and pachymetry < 500 µm")
 
     if postop_pachy < 400:
@@ -126,28 +126,29 @@ def run_full_analysis(sphere, cylinder, optical_zone, preop_pachy, K1_pre, K2_pr
         preop_pachy >= 500 and
         postop_pachy >= 410 and
         34 <= postop_Kavg <= 50 and
-        ablation_depth <= 140
+        ablation_depth <= 150
     )
 
     prk_eligible = (
         sphere < 0 and
         preop_pachy >= 460 and
         postop_pachy >= 400 and
-        ablation_depth <= 90 and
+        ablation_depth <= 100 and
         34 <= postop_Kavg <= 50
     )
 
     # UPDATED eligibility conditions as requested
     phakic_iol_eligible = ( 
         age < 40 and
-        (sphere <= -10 or sphere > +6 or preop_pachy < 500) 
+        (sphere <= -8 or sphere > +6 or postop_pachy < 400) 
     )
 
     pseudophakic_iol_eligible = (
         age >= 40 and
-        (sphere <= -10 or sphere > +6 or preop_pachy < 500)
+        (sphere <= -8 or sphere > +6 or postop_pachy < 400)
     )
 
+    
     recommendations = []
 
     if lasik_eligible:

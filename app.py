@@ -117,3 +117,8 @@ if st.button("Refractive Plan"):
 else:
     st.markdown("*_Enter patient data and click 'Refractive Plan' to see the results._*")
 
+
+
+# Footer spacing
+st.markdown(" ")
+st.caption("Developed by Dr. Ahmed Gamal Abdallah, Consultant Ophthalmologist")
